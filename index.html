@@ -1926,10 +1926,29 @@
             if (!ctx || !canvas) return; // 确保画布已初始化
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
+
+            // 背景网格铺满整个画布
+            const bgStep = 20;
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.lineWidth = 0.5;
+            for (let x = 0; x <= canvas.width; x += bgStep) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= canvas.height; y += bgStep) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            const roomSize = Math.max(canvas.width, canvas.height);
             const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const roomSize = 300;
+            const centerY = canvas.height;
             const step = roomSize / gridSize;
             
             // 调试：显示所有调试数据
