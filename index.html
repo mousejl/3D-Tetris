@@ -2196,6 +2196,7 @@
                 const cz = count > 0 ? sumZ / count : 0;
                 
                 // 计算方块的所有体素位置（网格索引）
+                const showWallCoordinates = false;
                 let frontWallPositions = [];
                 let backWallPositions = [];
                 let voxelDetails = []; // 体素详细信息
@@ -2224,8 +2225,10 @@
                     }
                 }
                 
-                debugLines.push('');
-                debugLines.push(`网格位置: ${frontWallPositions.join(' ')}`);
+                if (showWallCoordinates) {
+                    debugLines.push('');
+                    debugLines.push(`网格位置: ${frontWallPositions.join(' ')}`);
+                }
                 
                 // 体素详情（可折叠）
                 if (voxelDetails.length <= 4) {
@@ -2239,7 +2242,7 @@
                 debugLines.push(`后墙填充: ${backWallColors.size} / ${gridSize * gridHeight} (${(backWallColors.size / (gridSize * gridHeight) * 100).toFixed(1)}%)`);
                 
                 // 显示后墙所有彩色方块坐标
-                if (backWallColors.size > 0 && backWallColors.size <= 20) {
+                if (showWallCoordinates && backWallColors.size > 0 && backWallColors.size <= 20) {
                     debugLines.push(`后墙坐标:`);
                     let coordList = [];
                     for (let [key, color] of backWallColors) {
