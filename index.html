@@ -224,20 +224,70 @@
         .mobile-controls {
             display: none;
             position: fixed;
-            bottom: 20px;
+            bottom: 10px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 10px;
             border-radius: 15px;
-            gap: 10px;
+            gap: 8px;
             flex-direction: column;
             align-items: center;
+            max-width: 95vw;
         }
         
         .mobile-controls.visible {
             display: flex;
+        }
+        
+        /* 移动端游戏信息栏 */
+        .mobile-game-info {
+            display: none;
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .mobile-controls.visible .mobile-game-info {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.75rem;
+        }
+        
+        .mobile-info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        
+        .mobile-info-label {
+            opacity: 0.8;
+            font-size: 0.7rem;
+        }
+        
+        .mobile-info-value {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        
+        .mobile-next-piece {
+            display: none;
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+        
+        .mobile-controls.visible .mobile-next-piece {
+            display: block;
         }
         
         .control-row {
@@ -315,6 +365,11 @@
             
             /* 移动端隐藏键盘操作说明 */
             .keyboard-instructions {
+                display: none !important;
+            }
+            
+            /* 移动端隐藏右侧信息栏 */
+            .right-sidebar {
                 display: none !important;
             }
         }
@@ -411,7 +466,7 @@
             </div>
             
             <!-- 右侧信息区 -->
-            <div style="display: flex; flex-direction: column; gap: 20px; min-width: 200px;">
+            <div class="right-sidebar" style="display: flex; flex-direction: column; gap: 20px; min-width: 200px;">
                 <!-- 下一个方块 -->
                 <div class="next-piece-area">
                     <canvas id="nextPieceCanvas" width="120" height="120" style="background: rgba(0,0,0,0.2); border-radius: 10px;"></canvas>
@@ -451,6 +506,28 @@
     
     <!-- 移动端触摸控制按钮 -->
     <div class="mobile-controls" id="mobileControls">
+        <!-- 游戏信息栏 -->
+        <div class="mobile-game-info">
+            <div class="mobile-info-item">
+                <div class="mobile-info-label">得分</div>
+                <div class="mobile-info-value" id="mobileScoreValue">0</div>
+            </div>
+            <div class="mobile-info-item">
+                <div class="mobile-info-label">等级</div>
+                <div class="mobile-info-value" id="mobileLevelValue">1</div>
+            </div>
+            <canvas id="mobileNextPieceCanvas" class="mobile-next-piece" width="60" height="60"></canvas>
+            <div class="mobile-info-item">
+                <div class="mobile-info-label">消除</div>
+                <div class="mobile-info-value" id="mobileLinesValue">0</div>
+            </div>
+            <div class="mobile-info-item">
+                <div class="mobile-info-label">后墙</div>
+                <div class="mobile-info-value" id="mobileWallCellsValue">0</div>
+            </div>
+        </div>
+        
+        <!-- 控制按钮 -->
         <div class="control-row">
             <div class="mobile-btn" id="mobilePause">⏸</div>
         </div>
@@ -1615,13 +1692,21 @@
             document.getElementById('levelValue').textContent = level;
             document.getElementById('linesValue').textContent = lines;
             document.getElementById('wallCellsValue').textContent = backWallColors.size;
+            
+            // 同时更新移动端显示
+            const mobileScore = document.getElementById('mobileScoreValue');
+            const mobileLevel = document.getElementById('mobileLevelValue');
+            const mobileLines = document.getElementById('mobileLinesValue');
+            const mobileWall = document.getElementById('mobileWallCellsValue');
+            
+            if (mobileScore) mobileScore.textContent = score;
+            if (mobileLevel) mobileLevel.textContent = level;
+            if (mobileLines) mobileLines.textContent = lines;
+            if (mobileWall) mobileWall.textContent = backWallColors.size;
         }
 
         function drawNextPiece() {
-            if (!nextCtx || !nextPiece || !nextPiece.shape) return;
-            const width = nextCanvas.width;
-            const height = nextCanvas.height;
-            nextCtx.clearRect(0, 0, width, height);
+            if (!nextPiece || !nextPiece.shape) return;
             
             // 找到第一个非空层来预览
             let shape2D = null;
@@ -1648,21 +1733,55 @@
             
             const rows = shape2D.length;
             const cols = shape2D[0].length;
-            const blockSize = Math.min(width / (cols + 1), height / (rows + 1));
-            const offsetX = (width - cols * blockSize) / 2;
-            const offsetY = (height - rows * blockSize) / 2;
-            nextCtx.fillStyle = '#ffffff10';
-            nextCtx.fillRect(0, 0, width, height);
-            for (let y = 0; y < rows; y++) {
-                for (let x = 0; x < cols; x++) {
-                    if (shape2D[y][x]) {
-                        const px = offsetX + x * blockSize;
-                        const py = offsetY + y * blockSize;
-                        nextCtx.fillStyle = nextPiece.color;
-                        nextCtx.fillRect(px, py, blockSize - 4, blockSize - 4);
-                        nextCtx.strokeStyle = '#ffffff';
-                        nextCtx.lineWidth = 1;
-                        nextCtx.strokeRect(px, py, blockSize - 4, blockSize - 4);
+            
+            // 绘制PC端下一个方块
+            if (nextCtx) {
+                const width = nextCanvas.width;
+                const height = nextCanvas.height;
+                nextCtx.clearRect(0, 0, width, height);
+                const blockSize = Math.min(width / (cols + 1), height / (rows + 1));
+                const offsetX = (width - cols * blockSize) / 2;
+                const offsetY = (height - rows * blockSize) / 2;
+                nextCtx.fillStyle = '#ffffff10';
+                nextCtx.fillRect(0, 0, width, height);
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        if (shape2D[y][x]) {
+                            const px = offsetX + x * blockSize;
+                            const py = offsetY + y * blockSize;
+                            nextCtx.fillStyle = nextPiece.color;
+                            nextCtx.fillRect(px, py, blockSize - 4, blockSize - 4);
+                            nextCtx.strokeStyle = '#ffffff';
+                            nextCtx.lineWidth = 1;
+                            nextCtx.strokeRect(px, py, blockSize - 4, blockSize - 4);
+                        }
+                    }
+                }
+            }
+            
+            // 绘制移动端下一个方块
+            const mobileNextCanvas = document.getElementById('mobileNextPieceCanvas');
+            const mobileNextCtx = mobileNextCanvas ? mobileNextCanvas.getContext('2d') : null;
+            if (mobileNextCtx) {
+                const width = mobileNextCanvas.width;
+                const height = mobileNextCanvas.height;
+                mobileNextCtx.clearRect(0, 0, width, height);
+                const blockSize = Math.min(width / (cols + 1), height / (rows + 1));
+                const offsetX = (width - cols * blockSize) / 2;
+                const offsetY = (height - rows * blockSize) / 2;
+                mobileNextCtx.fillStyle = '#ffffff10';
+                mobileNextCtx.fillRect(0, 0, width, height);
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        if (shape2D[y][x]) {
+                            const px = offsetX + x * blockSize;
+                            const py = offsetY + y * blockSize;
+                            mobileNextCtx.fillStyle = nextPiece.color;
+                            mobileNextCtx.fillRect(px, py, blockSize - 2, blockSize - 2);
+                            mobileNextCtx.strokeStyle = '#ffffff';
+                            mobileNextCtx.lineWidth = 1;
+                            mobileNextCtx.strokeRect(px, py, blockSize - 2, blockSize - 2);
+                        }
                     }
                 }
             }
