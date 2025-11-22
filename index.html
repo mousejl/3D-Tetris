@@ -1927,6 +1927,65 @@
             
             requestAnimationFrame(gameLoop);
         }
+
+        function startGame() {
+            gameGrid = Array(GRID_HEIGHT).fill().map(() => Array(GRID_WIDTH).fill(0));
+            score = 0;
+            level = 1;
+            lines = 0;
+            dropInterval = 1000;
+            lastDropTime = 0;
+            gameRunning = true;
+            gamePaused = false;
+            backWallColors.clear();
+            hideStatusOverlay();
+
+            currentPiece = generatePiece();
+            nextPiece = generatePiece();
+
+            updateDisplay();
+            drawNextPiece();
+            draw3DGrid();
+            requestAnimationFrame(gameLoop);
+            updateMobilePauseState();
+            const pauseButton = document.getElementById('pauseGame');
+            if (pauseButton) {
+                pauseButton.textContent = '暂停';
+            }
+        }
+
+        function togglePause() {
+            if (!gameRunning) return;
+            gamePaused = !gamePaused;
+            const pauseButton = document.getElementById('pauseGame');
+            if (pauseButton) {
+                pauseButton.textContent = gamePaused ? '继续' : '暂停';
+            }
+
+            if (gamePaused) {
+                showStatusOverlay('暂停中', '按 空格 或 点击“继续”恢复游戏', false);
+            } else {
+                hideStatusOverlay();
+                lastDropTime = 0;
+                requestAnimationFrame(gameLoop);
+            }
+
+            updateMobilePauseState();
+        }
+
+        function restartGame() {
+            if (gameRunning) {
+                gameRunning = false;
+                gamePaused = false;
+            }
+            setTimeout(startGame, 100);
+        }
+
+        function updateMobilePauseState() {
+            const mobilePause = document.getElementById('mobilePause');
+            if (!mobilePause) return;
+            mobilePause.textContent = (!gameRunning || gamePaused) ? '▶' : '⏸';
+        }
         
         // 绘制3D网格
         function draw3DGrid() {
