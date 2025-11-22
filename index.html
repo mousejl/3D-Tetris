@@ -62,6 +62,33 @@
             gap: 0;
         }
 
+        .music-progress {
+            position: relative;
+            width: 52px;
+            height: 52px;
+        }
+
+        .music-progress svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring__background {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 3;
+        }
+
+        .progress-ring__circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.8);
+            stroke-width: 3;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.1s ease;
+        }
+
         .music-toggle {
             width: 40px;
             height: 40px;
@@ -499,7 +526,13 @@
         </div>
     </div>
     <div class="music-control">
-        <button id="musicToggle" class="music-toggle" type="button">♫</button>
+        <div class="music-progress">
+            <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+                <circle class="progress-ring__background" cx="26" cy="26" r="24"></circle>
+                <circle class="progress-ring__circle" cx="26" cy="26" r="24"></circle>
+            </svg>
+            <button id="musicToggle" class="music-toggle" type="button" aria-pressed="false" title="播放背景音乐">♫</button>
+        </div>
     </div>
     <div class="container">
         <!-- 游戏标题区 -->
@@ -821,8 +854,30 @@
                 }
                 musicEnabled = !musicEnabled;
                 updateMusicToggleText();
+                updateProgress();
             });
         }
+
+        const progressCircle = document.querySelector('.progress-ring__circle');
+        const radius = 24;
+        const circumference = 2 * Math.PI * radius;
+        if (progressCircle) {
+            progressCircle.style.strokeDasharray = circumference;
+            progressCircle.style.strokeDashoffset = circumference;
+        }
+
+        function updateProgress() {
+            if (!progressCircle || !backgroundMusic.duration) return;
+            const offset = circumference - (backgroundMusic.currentTime / backgroundMusic.duration) * circumference;
+            progressCircle.style.strokeDashoffset = isNaN(offset) ? circumference : offset;
+        }
+
+        backgroundMusic.addEventListener('timeupdate', updateProgress);
+        backgroundMusic.addEventListener('ended', () => {
+            musicEnabled = false;
+            updateMusicToggleText();
+            updateProgress();
+        });
 
         function showStatusOverlay(title, text, showButton = false) {
             if (!statusOverlay) return;
