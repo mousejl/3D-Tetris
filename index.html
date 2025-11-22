@@ -559,7 +559,6 @@
                     </div>
                     
                     <div class="control-row primary-row">
-                        <div class="mobile-btn" id="mobileStart">▶</div>
                         <div class="mobile-btn" id="mobilePause">⏸</div>
                         <div class="mobile-btn" id="mobileRotateUp">↻X</div>
                         <canvas id="mobileNextPieceCanvas" class="mobile-next-piece" width="60" height="60"></canvas>
@@ -3115,13 +3114,6 @@
         // 移动端触摸控制
         function setupMobileControls() {
             const mobileControls = {
-                'mobileStart': () => {
-                    if (!gameRunning) {
-                        startGame();
-                    } else if (gamePaused) {
-                        togglePause();
-                    }
-                },
                 'mobileLeft': () => movePiece(-1, 0),
                 'mobileRight': () => movePiece(1, 0),
                 'mobileUp': () => movePieceY(1),
@@ -3145,7 +3137,7 @@
                     // 使用 touchstart 而不是 click 以获得更快的响应
                     btn.addEventListener('touchstart', (e) => {
                         e.preventDefault(); // 防止双击缩放
-                        if (id === 'mobilePause' || id === 'mobileStart' || (gameRunning && !gamePaused)) {
+                        if (id === 'mobilePause' || (gameRunning && !gamePaused)) {
                             mobileControls[id]();
                             if (id !== 'mobilePause') {
                                 draw3DGrid();
