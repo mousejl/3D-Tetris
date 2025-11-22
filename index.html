@@ -224,18 +224,18 @@
         .mobile-controls {
             display: none;
             position: fixed;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 0;
+            left: 0;
+            right: 0;
             z-index: 1000;
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(10px);
             padding: 10px;
-            border-radius: 15px;
+            border-radius: 0;
             gap: 5px;
             flex-direction: column;
             align-items: center;
-            max-width: 95vw;
+            width: 100vw;
         }
         
         .mobile-controls.visible {
@@ -294,13 +294,13 @@
         
         .mobile-next-piece {
             display: none;
-            width: 60px;
+            flex: 1;
+            min-width: 0;
             height: 60px;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 8px;
             border: 2px solid rgba(255, 255, 255, 0.3);
-            margin: 0; /* 确保没有额外的外边距 */
-            vertical-align: middle; /* 垂直对齐 */
+            margin: 0;
         }
         
         .mobile-controls.visible .mobile-next-piece {
@@ -310,12 +310,15 @@
         .control-row {
             display: flex;
             gap: 8px;
-            justify-content: center;
-            align-items: center; /* 确保所有元素垂直居中对齐 */
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 0 10px;
         }
         
         .mobile-btn {
-            width: 60px;
+            flex: 1;
+            min-width: 0;
             height: 60px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: 2px solid rgba(255, 255, 255, 0.3);
