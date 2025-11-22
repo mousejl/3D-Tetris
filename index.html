@@ -308,17 +308,17 @@
         
         .control-row {
             display: flex;
-            gap: 8px;
+            gap: 12px;
             justify-content: space-between;
             align-items: center;
             width: 100%;
             padding: 0 10px;
         }
-        
+
         .control-row.primary-row {
             justify-content: center;
         }
-        
+
         .control-row.primary-row .mobile-btn {
             flex: 1;
         }
@@ -327,6 +327,10 @@
             flex: none;
             width: 60px;
             min-width: 60px;
+        }
+
+        .control-row + .control-row {
+            margin-top: 4px;
         }
         
         .mobile-btn {
