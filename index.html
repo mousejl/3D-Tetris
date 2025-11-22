@@ -2462,12 +2462,14 @@
                 ctx.closePath();
                 ctx.stroke();
                 
-                // 在彩色方块中心显示后墙索引
-                const centerX_proj = (projectedVertices[0].x + projectedVertices[2].x) / 2;
-                const centerY_proj = (projectedVertices[0].y + projectedVertices[2].y) / 2;
-                ctx.fillStyle = '#000';
-                ctx.font = 'bold 10px monospace';
-                ctx.fillText(`${xIndex},${yIndex}`, centerX_proj - 10, centerY_proj + 3);
+                // 在彩色方块中心显示后墙索引（仅在调试模式下）
+                if (showWallCoordinates) {
+                    const centerX_proj = (projectedVertices[0].x + projectedVertices[2].x) / 2;
+                    const centerY_proj = (projectedVertices[0].y + projectedVertices[2].y) / 2;
+                    ctx.fillStyle = '#000';
+                    ctx.font = 'bold 10px monospace';
+                    ctx.fillText(`${xIndex},${yIndex}`, centerX_proj - 10, centerY_proj + 3);
+                }
             }
             
             if (SHOW_FRONT_WALL) {
