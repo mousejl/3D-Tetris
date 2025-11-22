@@ -114,13 +114,26 @@
         }
 
         .music-toggle.playing {
-            background: rgba(255, 255, 255, 0.15);
-            animation: spin 6s linear infinite;
+            background: rgba(255, 255, 255, 0.2);
+            animation: spin 6s linear infinite, pulse 2.7s ease-in-out infinite;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.35);
         }
 
         @keyframes spin {
             from { transform: translate(-50%, -50%) rotate(0deg); }
             to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 18px rgba(255, 255, 255, 0.25);
+            }
+            50% {
+                box-shadow: 0 0 32px rgba(255, 255, 255, 0.45);
+            }
+            100% {
+                box-shadow: 0 0 18px rgba(255, 255, 255, 0.25);
+            }
         }
         
         .game-main {
@@ -839,7 +852,7 @@
         const statusOverlayTitle = document.getElementById('statusOverlayTitle');
         const statusOverlayText = document.getElementById('statusOverlayText');
         const statusOverlayButton = document.getElementById('statusOverlayButton');
-        const backgroundMusic = new Audio('https://mp3l.jamendo.com/?trackid=2285363&format=mp32');
+        const backgroundMusic = new Audio('assets/music/canyon.mp3');
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.35;
         let musicEnabled = false;
