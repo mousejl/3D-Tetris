@@ -852,11 +852,24 @@
         const statusOverlayTitle = document.getElementById('statusOverlayTitle');
         const statusOverlayText = document.getElementById('statusOverlayText');
         const statusOverlayButton = document.getElementById('statusOverlayButton');
-        const backgroundMusic = new Audio('assets/music/canyon.mp3');
+        const ONLINE_MUSIC_URL = 'https://mp3l.jamendo.com/?trackid=2285363&format=mp32';
+        const LOCAL_MUSIC_URL = 'assets/music/canyon.mp3';
+        const backgroundMusic = new Audio(ONLINE_MUSIC_URL);
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.35;
+        let attemptedLocalFallback = false;
         let musicEnabled = false;
         const musicToggleBtn = document.getElementById('musicToggle');
+
+        backgroundMusic.addEventListener('error', () => {
+            if (attemptedLocalFallback) return;
+            attemptedLocalFallback = true;
+            backgroundMusic.src = LOCAL_MUSIC_URL;
+            backgroundMusic.load();
+            if (musicEnabled) {
+                backgroundMusic.play().catch(() => {});
+            }
+        });
 
         function updateMusicToggleText() {
             if (!musicToggleBtn) return;
@@ -2373,24 +2386,27 @@
             }
             
             // 绘制后墙网格坐标标签（10×10网格）
-            ctx.fillStyle = '#000';
-            ctx.font = 'bold 10px monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            for (let yIndex = 0; yIndex < gridSize; yIndex++) {
-                for (let xIndex = 0; xIndex < gridSize; xIndex++) {
-                    const worldX = (xIndex - Math.floor(gridSize / 2) + 0.5) * step;
-                    const worldY = (yIndex - Math.floor(gridSize / 2) + 0.5) * step;
-                    const worldZ = cubeSize;
-                    
-                    // 应用旋转
-                    const rotatedX = worldX * cosAngle - worldZ * sinAngle;
-                    const rotatedZ = worldX * sinAngle + worldZ * cosAngle;
-                    
-                    const point = project3D(rotatedX, worldY, rotatedZ, centerX, centerY, distance);
-                    
-                    // 绘制坐标标签
-                    ctx.fillText(`${xIndex},${yIndex}`, point.x, point.y);
+            const showWallCoordinates = false;
+            if (showWallCoordinates) {
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 10px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                for (let yIndex = 0; yIndex < gridSize; yIndex++) {
+                    for (let xIndex = 0; xIndex < gridSize; xIndex++) {
+                        const worldX = (xIndex - Math.floor(gridSize / 2) + 0.5) * step;
+                        const worldY = (yIndex - Math.floor(gridSize / 2) + 0.5) * step;
+                        const worldZ = cubeSize;
+                        
+                        // 应用旋转
+                        const rotatedX = worldX * cosAngle - worldZ * sinAngle;
+                        const rotatedZ = worldX * sinAngle + worldZ * cosAngle;
+                        
+                        const point = project3D(rotatedX, worldY, rotatedZ, centerX, centerY, distance);
+                        
+                        // 绘制坐标标签
+                        ctx.fillText(`${xIndex},${yIndex}`, point.x, point.y);
+                    }
                 }
             }
             
