@@ -242,7 +242,21 @@
             display: flex;
         }
         
-        /* 移动端游戏信息栏 */
+        /* 移动端游戏信息栏（顶部） */
+        .mobile-game-info-top {
+            display: none;
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            margin: 10px 0;
+            justify-content: space-around;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.8rem;
+        }
+        
+        /* 移动端游戏信息栏（控制区） */
         .mobile-game-info {
             display: none;
             width: 100%;
@@ -372,6 +386,16 @@
             .right-sidebar {
                 display: none !important;
             }
+            
+            /* 移动端显示顶部游戏信息栏 */
+            .mobile-game-info-top {
+                display: flex !important;
+            }
+            
+            /* 移动端隐藏控制区的游戏信息栏 */
+            .mobile-controls.visible .mobile-game-info {
+                display: none !important;
+            }
         }
         
         @media (max-width: 768px) {
@@ -415,6 +439,26 @@
             <h1>3D俄罗斯方块</h1>
             <div class="description">
                 基于三维透视空间的俄罗斯方块游戏
+            </div>
+        </div>
+        
+        <!-- 移动端游戏信息栏（在标题下方） -->
+        <div class="mobile-game-info-top" id="mobileGameInfoTop">
+            <div class="mobile-info-item">
+                <div class="mobile-info-label">得分</div>
+                <div class="mobile-info-value" id="mobileScoreValueTop">0</div>
+            </div>
+            <div class="mobile-info-item">
+                <div class="mobile-info-label">等级</div>
+                <div class="mobile-info-value" id="mobileLevelValueTop">1</div>
+            </div>
+            <div class="mobile-info-item">
+                <div class="mobile-info-label">消除</div>
+                <div class="mobile-info-value" id="mobileLinesValueTop">0</div>
+            </div>
+            <div class="mobile-info-item">
+                <div class="mobile-info-label">后墙</div>
+                <div class="mobile-info-value" id="mobileWallCellsValueTop">0</div>
             </div>
         </div>
         
@@ -1696,7 +1740,7 @@
             document.getElementById('linesValue').textContent = lines;
             document.getElementById('wallCellsValue').textContent = backWallColors.size;
             
-            // 同时更新移动端显示
+            // 同时更新移动端控制区显示
             const mobileScore = document.getElementById('mobileScoreValue');
             const mobileLevel = document.getElementById('mobileLevelValue');
             const mobileLines = document.getElementById('mobileLinesValue');
@@ -1706,6 +1750,17 @@
             if (mobileLevel) mobileLevel.textContent = level;
             if (mobileLines) mobileLines.textContent = lines;
             if (mobileWall) mobileWall.textContent = backWallColors.size;
+            
+            // 同时更新移动端顶部显示
+            const mobileScoreTop = document.getElementById('mobileScoreValueTop');
+            const mobileLevelTop = document.getElementById('mobileLevelValueTop');
+            const mobileLinesTop = document.getElementById('mobileLinesValueTop');
+            const mobileWallTop = document.getElementById('mobileWallCellsValueTop');
+            
+            if (mobileScoreTop) mobileScoreTop.textContent = score;
+            if (mobileLevelTop) mobileLevelTop.textContent = level;
+            if (mobileLinesTop) mobileLinesTop.textContent = lines;
+            if (mobileWallTop) mobileWallTop.textContent = backWallColors.size;
         }
 
         function drawNextPiece() {
