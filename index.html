@@ -53,21 +53,37 @@
             letter-spacing: 0.1em;
         }
 
+        .music-control {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            gap: 0;
+        }
+
         .music-toggle {
-            margin-top: 4px;
-            font-size: 0.7rem;
-            padding: 4px 10px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            background: rgba(255, 255, 255, 0.08);
-            color: inherit;
-            cursor: pointer;
-            transition: background 0.2s ease, transform 0.2s ease;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+            transition: transform 0.2s ease, background 0.2s ease;
         }
 
         .music-toggle:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
+            transform: translateY(-2px) scale(1.05);
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .music-toggle.playing {
+            background: rgba(255, 255, 255, 0.15);
         }
         
         .game-main {
@@ -482,6 +498,9 @@
             <button id="statusOverlayButton" style="display: none;">再来一局</button>
         </div>
     </div>
+    <div class="music-control">
+        <button id="musicToggle" class="music-toggle" type="button">♫</button>
+    </div>
     <div class="container">
         <!-- 游戏标题区 -->
         <div class="game-header">
@@ -490,7 +509,6 @@
                 基于三维透视空间的俄罗斯方块游戏
             </div>
             <div class="game-version" id="gameVersion">v1.5</div>
-            <button id="musicToggle" class="music-toggle" type="button">背景音乐：关</button>
         </div>
         
         <!-- 移动端游戏信息栏（在标题下方） -->
@@ -786,7 +804,9 @@
 
         function updateMusicToggleText() {
             if (!musicToggleBtn) return;
-            musicToggleBtn.textContent = musicEnabled ? '背景音乐：开' : '背景音乐：关';
+            musicToggleBtn.setAttribute('aria-pressed', musicEnabled);
+            musicToggleBtn.title = musicEnabled ? '关闭背景音乐' : '播放背景音乐';
+            musicToggleBtn.classList.toggle('playing', musicEnabled);
         }
 
         if (musicToggleBtn) {
