@@ -219,6 +219,113 @@
         select option:hover {
             background: #667eea;
         }
+        
+        /* 移动端控制按钮 */
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 15px;
+            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .mobile-controls.visible {
+            display: flex;
+        }
+        
+        .control-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .mobile-btn {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+            transition: all 0.2s;
+        }
+        
+        .mobile-btn:active {
+            transform: scale(0.95);
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+        
+        .mobile-btn.wide {
+            width: 130px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 15px;
+                max-width: 95vw;
+            }
+            
+            .main-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .controls {
+                min-width: 100%;
+                max-width: 100%;
+            }
+            
+            canvas {
+                max-width: 100%;
+                height: auto;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .mobile-controls {
+                display: flex;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.2rem;
+            }
+            
+            .description {
+                font-size: 0.85rem;
+            }
+            
+            #perspectiveCanvas {
+                width: 100% !important;
+                height: auto !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -324,6 +431,29 @@
                     空格键/P键 → 暂停/继续
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- 移动端触摸控制按钮 -->
+    <div class="mobile-controls" id="mobileControls">
+        <div class="control-row">
+            <div class="mobile-btn" id="mobilePause">⏸</div>
+        </div>
+        <div class="control-row">
+            <div class="mobile-btn" id="mobileRotateUp">↻X</div>
+        </div>
+        <div class="control-row">
+            <div class="mobile-btn" id="mobileRotateLeft">↺Y</div>
+            <div class="mobile-btn" id="mobileUp">↑</div>
+            <div class="mobile-btn" id="mobileRotateRight">↻Y</div>
+        </div>
+        <div class="control-row">
+            <div class="mobile-btn" id="mobileLeft">←</div>
+            <div class="mobile-btn" id="mobileDown">↓</div>
+            <div class="mobile-btn" id="mobileRight">→</div>
+        </div>
+        <div class="control-row">
+            <div class="mobile-btn" id="mobileRotateDown">↺X</div>
         </div>
     </div>
 
@@ -2798,6 +2928,74 @@
         });
         
         // 视角距离已锁定，移除鼠标滚轮缩放功能
+        
+        // 移动端触摸控制
+        function setupMobileControls() {
+            const mobileControls = {
+                'mobileLeft': () => movePiece(-1, 0),
+                'mobileRight': () => movePiece(1, 0),
+                'mobileUp': () => movePieceY(1),
+                'mobileDown': () => movePieceY(-1),
+                'mobileRotateUp': () => rotateCurrentPiece(),
+                'mobileRotateDown': () => rotateCurrentPieceInverse(),
+                'mobileRotateLeft': () => rotateCurrentPieceYInverse(),
+                'mobileRotateRight': () => rotateCurrentPieceY(),
+                'mobilePause': () => {
+                    if (!gameRunning) {
+                        startGame();
+                    } else {
+                        togglePause();
+                    }
+                }
+            };
+            
+            Object.keys(mobileControls).forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    // 使用 touchstart 而不是 click 以获得更快的响应
+                    btn.addEventListener('touchstart', (e) => {
+                        e.preventDefault(); // 防止双击缩放
+                        if (id === 'mobilePause' || (gameRunning && !gamePaused)) {
+                            mobileControls[id]();
+                            if (id !== 'mobilePause') {
+                                draw3DGrid();
+                            }
+                        }
+                    });
+                    
+                    // 也保留 click 事件以支持鼠标点击测试
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (id === 'mobilePause' || (gameRunning && !gamePaused)) {
+                            mobileControls[id]();
+                            if (id !== 'mobilePause') {
+                                draw3DGrid();
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        
+        // 检测设备类型并显示移动端控制
+        function detectMobileDevice() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isSmallScreen = window.innerWidth <= 1024;
+            
+            if (isMobile || isSmallScreen) {
+                const mobileControlsEl = document.getElementById('mobileControls');
+                if (mobileControlsEl) {
+                    mobileControlsEl.classList.add('visible');
+                }
+            }
+        }
+        
+        // 初始化移动端控制
+        setupMobileControls();
+        detectMobileDevice();
+        
+        // 监听窗口大小变化
+        window.addEventListener('resize', detectMobileDevice);
         
         // 初始化游戏网格
         gameGrid = Array(GRID_HEIGHT).fill().map(() => Array(GRID_WIDTH).fill(0));
