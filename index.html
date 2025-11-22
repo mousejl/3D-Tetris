@@ -2814,6 +2814,12 @@
             }
         }
         
+        function updateMobilePauseState() {
+            const mobilePause = document.getElementById('mobilePause');
+            if (!mobilePause) return;
+            mobilePause.textContent = !gameRunning || gamePaused ? '▶' : '⏸';
+        }
+
         // 游戏控制函数
         function startGame() {
             // 重置游戏状态
@@ -2836,6 +2842,8 @@
             drawNextPiece();
             draw3DGrid(); // 立即绘制初始状态
             requestAnimationFrame(gameLoop);
+
+            updateMobilePauseState();
         }
         function restartGame() {
             if (gameRunning) {
@@ -2843,6 +2851,7 @@
                 gamePaused = false;
             }
             setTimeout(startGame, 100);
+            updateMobilePauseState();
         }
         
         // 暂停/继续游戏
@@ -2860,6 +2869,7 @@
                 requestAnimationFrame(gameLoop);
                 draw3DGrid(); // 继续时重绘，清除暂停提示
             }
+            updateMobilePauseState();
         }
         
         // 在画布上绘制暂停提示
@@ -3206,6 +3216,7 @@
         // 初始化移动端控制
         setupMobileControls();
         detectMobileDevice();
+        updateMobilePauseState();
         
         // 监听窗口大小变化
         window.addEventListener('resize', detectMobileDevice);
