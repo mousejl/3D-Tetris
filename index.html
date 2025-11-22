@@ -224,15 +224,15 @@
         .mobile-controls {
             display: none;
             position: fixed;
-            bottom: 10px;
+            bottom: 5px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(10px);
-            padding: 10px;
-            border-radius: 15px;
-            gap: 8px;
+            padding: 5px 8px;
+            border-radius: 12px;
+            gap: 4px;
             flex-direction: column;
             align-items: center;
             max-width: 95vw;
@@ -246,44 +246,44 @@
         .mobile-game-info {
             display: none;
             width: 100%;
-            padding: 8px;
+            padding: 4px 6px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            margin-bottom: 5px;
+            border-radius: 8px;
+            margin-bottom: 3px;
         }
         
         .mobile-controls.visible .mobile-game-info {
             display: flex;
             justify-content: space-around;
             align-items: center;
-            gap: 10px;
-            font-size: 0.75rem;
+            gap: 6px;
+            font-size: 0.65rem;
         }
         
         .mobile-info-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px;
+            gap: 1px;
         }
         
         .mobile-info-label {
             opacity: 0.8;
-            font-size: 0.7rem;
+            font-size: 0.6rem;
         }
         
         .mobile-info-value {
             color: #ffd700;
             font-weight: bold;
-            font-size: 0.85rem;
+            font-size: 0.7rem;
         }
         
         .mobile-next-piece {
             display: none;
-            width: 60px;
-            height: 60px;
+            width: 40px;
+            height: 40px;
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
+            border-radius: 6px;
         }
         
         .mobile-controls.visible .mobile-next-piece {
@@ -292,18 +292,18 @@
         
         .control-row {
             display: flex;
-            gap: 10px;
+            gap: 5px;
             justify-content: center;
         }
         
         .mobile-btn {
-            width: 60px;
-            height: 60px;
+            width: 45px;
+            height: 45px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 12px;
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
             color: white;
-            font-size: 24px;
+            font-size: 18px;
             font-weight: bold;
             display: flex;
             align-items: center;
@@ -320,7 +320,7 @@
         }
         
         .mobile-btn.wide {
-            width: 130px;
+            width: 95px;
         }
         
         /* 响应式设计 */
@@ -377,7 +377,7 @@
         @media (max-width: 768px) {
             body {
                 padding: 10px;
-                padding-bottom: 280px; /* 为触摸控制区域预留空间 */
+                padding-bottom: 180px; /* 为触摸控制区域预留空间（减小50%） */
             }
             
             .container {
@@ -396,7 +396,7 @@
             #perspectiveCanvas {
                 width: 100% !important;
                 height: auto !important;
-                max-height: calc(100vh - 350px); /* 确保画布不会被遮挡 */
+                max-height: calc(100vh - 250px); /* 确保画布不会被遮挡 */
             }
         }
     </style>
@@ -519,7 +519,7 @@
                 <div class="mobile-info-label">等级</div>
                 <div class="mobile-info-value" id="mobileLevelValue">1</div>
             </div>
-            <canvas id="mobileNextPieceCanvas" class="mobile-next-piece" width="60" height="60"></canvas>
+            <canvas id="mobileNextPieceCanvas" class="mobile-next-piece" width="40" height="40"></canvas>
             <div class="mobile-info-item">
                 <div class="mobile-info-label">消除</div>
                 <div class="mobile-info-value" id="mobileLinesValue">0</div>
