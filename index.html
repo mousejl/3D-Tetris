@@ -52,6 +52,23 @@
             margin-top: 4px;
             letter-spacing: 0.1em;
         }
+
+        .music-toggle {
+            margin-top: 4px;
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+            color: inherit;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .music-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
         
         .game-main {
             display: flex;
@@ -473,6 +490,7 @@
                 基于三维透视空间的俄罗斯方块游戏
             </div>
             <div class="game-version" id="gameVersion">v1.5</div>
+            <button id="musicToggle" class="music-toggle" type="button">背景音乐：关</button>
         </div>
         
         <!-- 移动端游戏信息栏（在标题下方） -->
@@ -760,6 +778,31 @@
         const statusOverlayTitle = document.getElementById('statusOverlayTitle');
         const statusOverlayText = document.getElementById('statusOverlayText');
         const statusOverlayButton = document.getElementById('statusOverlayButton');
+        const backgroundMusic = new Audio('https://cdn.pixabay.com/audio/2022/03/07/audio_6b509c82e2.mp3');
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.35;
+        let musicEnabled = false;
+        const musicToggleBtn = document.getElementById('musicToggle');
+
+        function updateMusicToggleText() {
+            if (!musicToggleBtn) return;
+            musicToggleBtn.textContent = musicEnabled ? '背景音乐：开' : '背景音乐：关';
+        }
+
+        if (musicToggleBtn) {
+            musicToggleBtn.addEventListener('click', () => {
+                if (musicEnabled) {
+                    backgroundMusic.pause();
+                    backgroundMusic.currentTime = 0;
+                } else {
+                    backgroundMusic.play().catch(() => {
+                        // 浏览器可能限制自动播放，等待下次点击
+                    });
+                }
+                musicEnabled = !musicEnabled;
+                updateMusicToggleText();
+            });
+        }
 
         function showStatusOverlay(title, text, showButton = false) {
             if (!statusOverlay) return;
