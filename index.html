@@ -377,10 +377,12 @@
         @media (max-width: 768px) {
             body {
                 padding: 10px;
+                padding-bottom: 280px; /* 为触摸控制区域预留空间 */
             }
             
             .container {
                 padding: 10px;
+                padding-bottom: 20px;
             }
             
             h1 {
@@ -394,6 +396,7 @@
             #perspectiveCanvas {
                 width: 100% !important;
                 height: auto !important;
+                max-height: calc(100vh - 350px); /* 确保画布不会被遮挡 */
             }
         }
     </style>
