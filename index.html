@@ -318,6 +318,14 @@
             padding: 0 10px;
         }
         
+        .control-row.primary-row {
+            justify-content: center;
+        }
+        
+        .control-row.primary-row .mobile-btn {
+            flex: 0 0 30%;
+        }
+        
         .mobile-btn {
             flex: 1;
             min-width: 0;
@@ -583,7 +591,7 @@
         </div>
         
         <!-- 控制按钮 -->
-        <div class="control-row">
+        <div class="control-row primary-row">
             <div class="mobile-btn" id="mobilePause">⏸</div>
             <div class="mobile-btn" id="mobileRotateUp">↻X</div>
             <canvas id="mobileNextPieceCanvas" class="mobile-next-piece" width="60" height="60"></canvas>
