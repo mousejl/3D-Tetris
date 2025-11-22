@@ -2310,85 +2310,56 @@
                 }
             }
             
-            // 绘制左墙网格 (x = -cubeSize) - 仅绘制从前墙到后墙的连接线
-            ctx.strokeStyle = '#ccc'; // 浅灰色
-            ctx.lineWidth = 0.5; // 更细的线条
-            // 只绘制前墙和后墙边缘的水平线 (z方向)
+            // 绘制左墙网格 (x = -cubeSize) - 仅绘制前后边缘连接线
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 0.5;
             for (let i = 0; i <= gridSize; i++) {
                 const x = -cubeSize;
                 const y = (i - gridSize / 2) * step;
-                
-                // 前墙到后墙的线
                 ctx.beginPath();
-                const zFront = -gridDepth / 2 * step;
-                const zBack = gridDepth / 2 * step;
-                
-                // 前墙点
-                const rotatedXFront = x * cosAngle - zFront * sinAngle;
-                const rotatedZFront = x * sinAngle + zFront * cosAngle;
-                const pointFront = project3D(rotatedXFront, y, rotatedZFront, centerX, centerY, distance);
-                
-                // 后墙点
-                const rotatedXBack = x * cosAngle - zBack * sinAngle;
-                const rotatedZBack = x * sinAngle + zBack * cosAngle;
-                const pointBack = project3D(rotatedXBack, y, rotatedZBack, centerX, centerY, distance);
-                
+                const pointFront = project3D(x, y, -cubeSize, centerX, centerY, distance);
+                const pointBack = project3D(x, y, cubeSize, centerX, centerY, distance);
                 ctx.moveTo(pointFront.x, pointFront.y);
                 ctx.lineTo(pointBack.x, pointBack.y);
                 ctx.stroke();
             }
-            
-            // 添加左墙的纵线 (从地面到顶面)
-            ctx.strokeStyle = '#ccc'; // 浅灰色
-            ctx.lineWidth = 0.5; // 更细的线条
-            for (let i = 0; i <= gridSize; i++) {
-                const z = (i - gridSize / 2) * step;
-                const x = -cubeSize;
-                
-                // 地面点
-                const groundRotatedX = x * cosAngle - z * sinAngle;
-                const groundRotatedZ = x * sinAngle + z * cosAngle;
-                const groundPoint = project3D(groundRotatedX, cubeSize, groundRotatedZ, centerX, centerY, distance);
-                
-                // 顶面点
-                const topRotatedX = x * cosAngle - z * sinAngle;
-                const topRotatedZ = x * sinAngle + z * cosAngle;
-                const topPoint = project3D(topRotatedX, -cubeSize, topRotatedZ, centerX, centerY, distance);
-                
-                ctx.beginPath();
-                ctx.moveTo(groundPoint.x, groundPoint.y);
-                ctx.lineTo(topPoint.x, topPoint.y);
-                ctx.stroke();
-            }
-            ctx.lineWidth = 1;
-            
+
             // 绘制右墙网格 (x = +cubeSize) - 仅绘制从前墙到后墙的连接线
-            ctx.strokeStyle = '#ccc'; // 浅灰色
-            ctx.lineWidth = 0.5; // 更细的线条
-            // 只绘制前墙和后墙边缘的水平线 (z方向)
             for (let i = 0; i <= gridSize; i++) {
                 const x = cubeSize;
                 const y = (i - gridSize / 2) * step;
-                
-                // 前墙到后墙的线
                 ctx.beginPath();
-                const zFront = -gridDepth / 2 * step;
-                const zBack = gridDepth / 2 * step;
-                
-                // 前墙点
-                const rotatedXFront = x * cosAngle - zFront * sinAngle;
-                const rotatedZFront = x * sinAngle + zFront * cosAngle;
-                const pointFront = project3D(rotatedXFront, y, rotatedZFront, centerX, centerY, distance);
-                
-                // 后墙点
-                const rotatedXBack = x * cosAngle - zBack * sinAngle;
-                const rotatedZBack = x * sinAngle + zBack * cosAngle;
-                const pointBack = project3D(rotatedXBack, y, rotatedZBack, centerX, centerY, distance);
-                
+                const pointFront = project3D(x, y, -cubeSize, centerX, centerY, distance);
+                const pointBack = project3D(x, y, cubeSize, centerX, centerY, distance);
                 ctx.moveTo(pointFront.x, pointFront.y);
                 ctx.lineTo(pointBack.x, pointBack.y);
                 ctx.stroke();
             }
+
+            // 在空间外的左右墙增加纵线
+            const shellOffset = step * 0.25;
+            const outerXPositions = [-cubeSize - shellOffset, cubeSize + shellOffset];
+            const verticalZ = [-cubeSize, cubeSize];
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 1;
+            outerXPositions.forEach(xVal => {
+                verticalZ.forEach(zVal => {
+                    ctx.beginPath();
+                    const rotatedX = xVal * cosAngle - zVal * sinAngle;
+                    const rotatedZ = xVal * sinAngle + zVal * cosAngle;
+                    let initialized = false;
+                    for (let y = -cubeSize; y <= cubeSize + 0.01; y += step / 4) {
+                        const point = project3D(rotatedX, y, rotatedZ, centerX, centerY, distance);
+                        if (!initialized) {
+                            ctx.moveTo(point.x, point.y);
+                            initialized = true;
+                        } else {
+                            ctx.lineTo(point.x, point.y);
+                        }
+                    }
+                    ctx.stroke();
+                });
+            });
             
             // 添加右墙的纵线 (从地面到顶面)
             ctx.strokeStyle = '#ccc'; // 浅灰色
