@@ -1,0 +1,2813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D俄罗斯方块</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            width: 100%;
+        }
+        
+        .game-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .game-main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .next-piece-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            display: block;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin: 20px 0;
+            cursor: grab;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 250px;
+            max-width: 250px;
+            justify-content: flex-start;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 120px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: white;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: white;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .value-display {
+            font-size: 0.8rem;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .description {
+            text-align: center;
+            margin-bottom: 20px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .status-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 999;
+        }
+
+        .status-overlay.visible {
+            display: flex;
+        }
+
+        .status-overlay-content {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 24px 32px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            min-width: 260px;
+        }
+
+        .status-overlay-title {
+            font-size: 1.4rem;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .status-overlay-text {
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+            opacity: 0.95;
+            white-space: pre-line;
+        }
+
+        .status-overlay button {
+            margin-top: 4px;
+        }
+        
+        /* 下拉框选项样式 - 深色背景以显示白色文字 */
+        select option {
+            background: #764ba2;
+            color: white;
+            padding: 8px;
+        }
+        
+        select option:hover {
+            background: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div id="statusOverlay" class="status-overlay">
+        <div class="status-overlay-content">
+            <div id="statusOverlayTitle" class="status-overlay-title"></div>
+            <div id="statusOverlayText" class="status-overlay-text"></div>
+            <button id="statusOverlayButton" style="display: none;">再来一局</button>
+        </div>
+    </div>
+    <div class="container">
+        <!-- 游戏标题区 -->
+        <div class="game-header">
+            <h1>3D俄罗斯方块</h1>
+            <div class="description">
+                基于三维透视空间的俄罗斯方块游戏
+            </div>
+        </div>
+        
+        <!-- 主内容区：左中右三栏 -->
+        <div class="main-content">
+            <!-- 左侧控制面板 -->
+            <div class="controls">
+                <!-- 游戏控制 -->
+                <div class="control-group">
+                    <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                        <button id="startGame" style="flex: 1;">开始游戏</button>
+                        <button id="pauseGame" style="flex: 1;">暂停</button>
+                    </div>
+                    <select id="pieceTypeSelect" style="width: 100%; margin-bottom: 5px; padding: 8px; border-radius: 25px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: bold;">
+                        <option value="random">随机方块</option>
+                        <option value="I">I 方块</option>
+                        <option value="O">O 方块</option>
+                        <option value="T">T 方块</option>
+                        <option value="S">S 方块</option>
+                        <option value="Z">Z 方块</option>
+                        <option value="J">J 方块</option>
+                        <option value="L">L 方块</option>
+                    </select>
+                    <div style="margin-bottom: 5px;">
+                        <input id="targetPositionsInput" type="text" value="" style="width: 100%; padding: 8px; border-radius: 25px; border: none; text-align: center; background: rgba(255,255,255,0.2); color: white; font-size: 12px;" title="自定义方块坐标，格式: [x,y] [x,y] ...。留空则生成标准方块" placeholder="例: [2,2] [3,2] [4,2] [3,3] 或留空">
+                    </div>
+                    <div style="display: flex; gap: 6px; margin-bottom: 5px;">
+                        <input id="targetZInput" type="number" min="-5" max="5" value="-5" style="flex: 1; padding: 8px; border-radius: 25px; border: none; text-align: center; background: rgba(255,255,255,0.2); color: white;" title="初始Z坐标 (-5前墙 至 5后墙)" placeholder="Z深度">
+                    </div>
+                    <button id="regenerateBtn" style="width: 100%;">生成指定方块</button>
+                </div>
+                
+                <!-- 视角控制 -->
+                <div class="control-group" style="margin-top: 15px;">
+                    <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                        <button id="rotateLeftBtn" style="flex: 1;">◀ 左转</button>
+                        <button id="rotateRightBtn" style="flex: 1;">右转 ▶</button>
+                    </div>
+                    <button id="resetRotationBtn" style="width: 100%;">重置视角</button>
+                </div>
+                
+                <!-- 调试数据 -->
+                <div class="control-group" style="margin-top: 15px;">
+                    <button id="copyDebugBtn" style="width: 100%; margin-bottom: 5px;">全选复制</button>
+                    <textarea id="debugData" readonly style="width: 100%; height: 150px; font-family: monospace; font-size: 10px; background: #000; color: #0f0; border: 1px solid #333; padding: 5px; resize: vertical;"></textarea>
+                </div>
+            </div>
+            
+            <!-- 中间游戏画布 -->
+            <div class="game-main">
+                <canvas id="perspectiveCanvas"></canvas>
+            </div>
+            
+            <!-- 右侧信息区 -->
+            <div style="display: flex; flex-direction: column; gap: 20px; min-width: 200px;">
+                <!-- 下一个方块 -->
+                <div class="next-piece-area">
+                    <canvas id="nextPieceCanvas" width="120" height="120" style="background: rgba(0,0,0,0.2); border-radius: 10px;"></canvas>
+                </div>
+                
+                <!-- 游戏信息 -->
+                <div style="font-size: 0.9rem; line-height: 1.8; text-align: left; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                        <div>得分：</div>
+                        <div style="text-align: right; color: #ffd700;" id="scoreValue">0</div>
+                        <div>等级：</div>
+                        <div style="text-align: right; color: #ffd700;" id="levelValue">1</div>
+                        <div>消除行数：</div>
+                        <div style="text-align: right; color: #ffd700;" id="linesValue">0</div>
+                        <div>后墙格数：</div>
+                        <div style="text-align: right; color: #ffd700;" id="wallCellsValue">0 / 100</div>
+                    </div>
+                </div>
+                
+                <!-- 操作说明 -->
+                <div style="font-size: 0.85rem; line-height: 1.8; text-align: left; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px;">
+                    ← 键 → 左移方块<br>
+                    → 键 → 右移方块<br>
+                    ↑ 键 → 上移方块<br>
+                    ↓ 键 → 下移方块<br>
+                    <br>
+                    W键 → 向上旋转（绕X轴）<br>
+                    S键 → 向下旋转（绕X轴）<br>
+                    A键 → 向左旋转（绕Y轴）<br>
+                    D键 → 向右旋转（绕Y轴）<br>
+                    <br>
+                    空格键/P键 → 暂停/继续
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局错误捕获
+        window.addEventListener('error', function(e) {
+            const errorMsg = `全局错误: ${e.message} (行 ${e.lineno})`;
+            console.error(errorMsg);
+            if (typeof errorLogs !== 'undefined') {
+                errorLogs.push(errorMsg);
+            }
+        });
+        
+        // 页面加载时检查所有必需的 DOM 元素是否存在
+        document.addEventListener('DOMContentLoaded', function() {
+            const requiredElements = [
+                'perspectiveCanvas',
+                'nextPieceCanvas',
+                'debugData',
+                'statusOverlay',
+                'statusOverlayTitle',
+                'statusOverlayText',
+                'statusOverlayButton',
+                'startGame',
+                'pieceTypeSelect',
+                'targetPositionsInput',
+                'targetZInput',
+                'regenerateBtn',
+                'rotateLeftBtn',
+                'rotateRightBtn',
+                'resetRotationBtn',
+                'copyDebugBtn',
+                'scoreValue',
+                'levelValue',
+                'linesValue',
+                'wallCellsValue'
+            ];
+            
+            const missingElements = requiredElements.filter(id => !document.getElementById(id));
+            
+            if (missingElements.length > 0) {
+                console.error(`缺失必需的 DOM 元素: ${missingElements.join(', ')}`);
+                if (typeof errorLogs !== 'undefined') {
+                    errorLogs.push(`缺失必需的 DOM 元素: ${missingElements.join(', ')}`);
+                }
+            }
+        });
+        
+        // ========== 游戏配置 ==========
+        const canvas = document.getElementById('perspectiveCanvas');
+        if (!canvas) {
+            alert('错误：找不到 perspectiveCanvas 元素');
+        }
+        const ctx = canvas ? canvas.getContext('2d') : null;
+        const nextCanvas = document.getElementById('nextPieceCanvas');
+        const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
+        
+        // 调试信息函数
+        function debugLog(message) {
+            const debugTextarea = document.getElementById('debugData');
+            if (debugTextarea) {
+                // 将新信息添加到开头，而不是末尾
+                // 这样draw3DGrid的更新不会覆盖调试日志
+                let currentValue = debugTextarea.value;
+                if (currentValue.includes('--- 方块状态 ---')) {
+                    // 如果已有方块状态，在分隔线之前插入
+                    const parts = currentValue.split('--- 方块状态 ---');
+                    debugTextarea.value = parts[0].trimEnd() + '\n' + message + '\n\n--- 方块状态 ---' + parts[1];
+                } else {
+                    // 否则直接添加到开头
+                    debugTextarea.value = (currentValue ? currentValue.trimEnd() + '\n' : '') + message;
+                }
+                // 清理多余的连续空行（保留最多一个空行）
+                debugTextarea.value = debugTextarea.value.replace(/\n{3,}/g, '\n\n');
+            }
+        }
+        
+        // 设置画布尺寸
+        if (canvas) {
+            canvas.width = 800;
+            canvas.height = 600;
+            debugLog('画布初始化成功: ' + canvas.width + 'x' + canvas.height);
+            debugLog('ctx 状态: ' + (ctx ? '已创建' : '未创建'));
+            
+            // 立即绘制初始网格
+            setTimeout(() => {
+                debugLog('开始绘制初始网格...');
+                try {
+                    draw3DGrid();
+                    debugLog('初始网格绘制完成');
+                } catch (error) {
+                    debugLog('绘制错误: ' + error.message);
+                }
+            }, 100);
+        } else {
+            debugLog('错误: 画布未找到');
+        }
+        
+        // 游戏配置 - 改为向后墙移动的3D空间
+        const GRID_WIDTH = 10;  // x轴方向（左右，10格宽）
+        const GRID_HEIGHT = 10; // y轴方向（上下，10格高）
+        const GRID_DEPTH = 20;   // z轴方向（前后，20格深）
+        
+        // 控制变量
+        let rotation = 0;    // 视角旋转默认值为0
+        let distance = 310;  // 视角距离默认值为310
+        let targetBackWallX = 4; // 初始前墙目标坐标（方块生成位置）
+        let targetBackWallY = 4;
+        let targetInitialZ = -5; // 初始Z坐标（-5前墙至5后墙）
+        let errorLogs = []; // 错误日志数组
+        const gridSize = 10; // X轴宽度（不可变）
+        const gridHeight = 10; // Y轴高度（不可变）
+        const gridDepth = 20; // Z轴深度（不可变）
+
+        // 游戏上限规则
+        const MAX_LINES = 50; // 累计消除行数上限，达到后触发游戏结束
+        
+        // 游戏状态
+        let gameRunning = false;
+        let gamePaused = false;
+        let score = 0;
+        let level = 1;
+        let lines = 0;
+        let dropInterval = 1000;
+        let lastDropTime = 0;
+
+        // 状态遮罩层元素
+        const statusOverlay = document.getElementById('statusOverlay');
+        const statusOverlayTitle = document.getElementById('statusOverlayTitle');
+        const statusOverlayText = document.getElementById('statusOverlayText');
+        const statusOverlayButton = document.getElementById('statusOverlayButton');
+
+        function showStatusOverlay(title, text, showButton = false) {
+            if (!statusOverlay) return;
+            statusOverlayTitle.textContent = title || '';
+            statusOverlayText.textContent = text || '';
+            if (showButton) {
+                statusOverlayButton.style.display = 'inline-block';
+            } else {
+                statusOverlayButton.style.display = 'none';
+            }
+            statusOverlay.classList.add('visible');
+        }
+
+        function hideStatusOverlay() {
+            if (!statusOverlay) return;
+            statusOverlay.classList.remove('visible');
+        }
+        
+        // 游戏网格 (10x10x20的3D空间：宽10×高10×深20)
+        // 注意：gameGrid 实际上是2D数组，用于传统俄罗斯方块逻辑（如果需要）
+        let gameGrid = [];
+        
+        // 俄罗斯方块形状定义（3D 体素，shape[z][y][x]），统一放入固定 4x4x4 体素盒（只在 z=1 层有形状，其余为 0）
+        const TETROMINOS = {
+            I: {
+                // 一条长度为 4 的直线，居中放在 z=1, y=1
+                shape: [
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [1,1,1,1],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ]
+                ],
+                color: '#00f0f0'
+            },
+            O: {
+                // 2x2x2 立方体，居中放在 z=1..2, y=1..2, x=1..2
+                shape: [
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,1,1,0],
+                        [0,1,1,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,1,1,0],
+                        [0,1,1,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ]
+                ],
+                color: '#f0f000'
+            },
+            T: {
+                // T 形：居中对齐（几何中心在1.5, 1.5）
+                // y=1: .111
+                // y=2: ..1.
+                shape: [
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,1,1,1],
+                        [0,0,1,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ]
+                ],
+                color: '#a000f0'
+            },
+            S: {
+                // S 形：
+                // y=1: ..11
+                // y=2: .11.
+                shape: [
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,1,1],
+                        [0,1,1,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ]
+                ],
+                color: '#00f000'
+            },
+            Z: {
+                // Z 形：居中对齐
+                // y=1: .11.
+                // y=2: ..11
+                shape: [
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,1,1,0],
+                        [0,0,1,1],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ]
+                ],
+                color: '#f00000'
+            },
+            J: {
+                // J 形：居中对齐（几何中心在2.0, 1.5）
+                // y=1: ..1.
+                // y=2: 111.
+                shape: [
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,1,0],
+                        [1,1,1,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ]
+                ],
+                color: '#0000f0'
+            },
+            L: {
+                // L 形：居中对齐（几何中心在2.0, 1.5）
+                // y=1: 1...
+                // y=2: 111.
+                shape: [
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [1,0,0,0],
+                        [1,1,1,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ],
+                    [
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0],
+                        [0,0,0,0]
+                    ]
+                ],
+                color: '#f0a000'
+            }
+        };
+        
+        // 当前方块
+        let currentPiece = {
+            type: null,
+            shape: null,
+            color: null,
+            x: 0,
+            y: 0,
+            rotation: 0
+        };
+        
+        // 下一个方块
+        let nextPiece = null;
+        
+        // 最后锁定的方块信息
+        let lastLockedPiece = null;
+        
+        // 一点透视投影函数
+        function project3D(x, y, z, centerX, centerY, distance) {
+            const scale = distance / (distance + z);
+            const projX = centerX + x * scale;
+            const projY = centerY + y * scale;
+            return { x: projX, y: projY, scale: scale };
+        }
+        
+        // 生成随机方块 - 支持三维移动（x,y,z）
+        function generatePiece(specifiedType = null) {
+            const pieces = Object.keys(TETROMINOS);
+            let randomType;
+            if (specifiedType && TETROMINOS[specifiedType]) {
+                randomType = specifiedType;
+            } else {
+                randomType = pieces[Math.floor(Math.random() * pieces.length)];
+            }
+            const piece = TETROMINOS[randomType];
+            
+            // 计算几何中心，与movePiece和drawCurrentPiece保持一致
+            let sumX = 0, sumY = 0, count = 0;
+            for (let z = 0; z < piece.shape.length; z++) {
+                for (let y = 0; y < piece.shape[z].length; y++) {
+                    for (let x = 0; x < piece.shape[z][y].length; x++) {
+                        if (piece.shape[z][y][x]) {
+                            sumX += x;
+                            sumY += y;
+                            count++;
+                        }
+                    }
+                }
+            }
+            if (count === 0) return null;
+            const cx = sumX / count;
+            const cy = sumY / count;
+            
+            // 计算相对于几何中心的偏移范围
+            let minLocalX = Infinity, maxLocalX = -Infinity;
+            let minLocalY = Infinity, maxLocalY = -Infinity;
+            for (let z = 0; z < piece.shape.length; z++) {
+                for (let y = 0; y < piece.shape[z].length; y++) {
+                    for (let x = 0; x < piece.shape[z][y].length; x++) {
+                        if (piece.shape[z][y][x]) {
+                            const localX = x - cx;
+                            const localY = y - cy;
+                            minLocalX = Math.min(minLocalX, localX);
+                            maxLocalX = Math.max(maxLocalX, localX);
+                            minLocalY = Math.min(minLocalY, localY);
+                            maxLocalY = Math.max(maxLocalY, localY);
+                        }
+                    }
+                }
+            }
+            
+            // 设置初始位置 - 使方块精确对齐到网格中心
+            // 目标：让方块的几何中心位于整数坐标，这样每个体素都能精确对齐到网格
+            // 
+            // 由于几何中心可能不是整数（如1.5），我们需要将整个方块平移
+            // 使得几何中心落在整数坐标上
+            // 
+            // 例如：如果cx=1.5，我们希望方块中心在x=0，所以initialX = 0 - 1.5 = -1.5
+            // 这样体素[0]在x=-1.5，体素[1]在x=-0.5，体素[2]在x=0.5，体素[3]在x=1.5
+            // 加上worldX的0.5偏移后，它们分别在-1.0, 0.0, 1.0, 2.0的网格中心
+            
+            let initialX = -cx; // X轴居中：将几何中心放在x=0
+            let initialY = 2 - cy; // Y轴：将几何中心放在y=2（靠近顶部但不会超出）
+
+            // 确保方块的所有单元格都在立方体范围内
+            // X轴范围 [-5, 5)，对应网格索引 [0, 9]
+            // Y轴范围 [-5, 5)，对应网格索引 [0, 9]
+            // 
+            // 由于我们使用 (board + 0.5) * step 来计算世界坐标
+            // board坐标范围应该是 [-5, 5)，即 [-5.0, 4.999...]
+            
+            // 检查并调整 x 坐标，确保所有体素都在范围内
+            if (initialX + minLocalX < -5) {
+                initialX = -5 - minLocalX;
+            }
+            if (initialX + maxLocalX >= 5) {
+                initialX = 4.99 - maxLocalX; // 精确到小数点后两位
+            }
+            
+            // 检查并调整 y 坐标，确保不超过顶面和地面
+            if (initialY + maxLocalY >= 5) {
+                initialY = 4.99 - maxLocalY;
+            }
+            if (initialY + minLocalY < -5) {
+                initialY = -5 - minLocalY;
+            }
+            
+            // 调试信息
+            console.log(`generatePiece: type=${randomType}, cx=${cx.toFixed(2)}, cy=${cy.toFixed(2)}`);
+            console.log(`  minLocal: x=${minLocalX.toFixed(2)}, y=${minLocalY.toFixed(2)}`);
+            console.log(`  maxLocal: x=${maxLocalX.toFixed(2)}, y=${maxLocalY.toFixed(2)}`);
+            console.log(`  initial: x=${initialX.toFixed(2)}, y=${initialY.toFixed(2)}`);
+            console.log(`  bounds: x=[${(initialX + minLocalX).toFixed(2)}, ${(initialX + maxLocalX).toFixed(2)}], y=[${(initialY + minLocalY).toFixed(2)}, ${(initialY + maxLocalY).toFixed(2)}]`);
+            
+            return {
+                type: randomType,
+                shape: piece.shape,
+                color: piece.color,
+                x: initialX,
+                y: initialY,
+                z: targetInitialZ, // 使用用户设置的初始Z坐标
+                rotation: 0
+            };
+        }
+        
+        // 根据坐标列表创建自定义方块
+        function createCustomPiece(positions, initialZ, pieceType) {
+            // positions: [{ x: gridX, y: gridY }, ...]
+            // gridX, gridY 是网格索引 (0-9)
+            
+            console.log('createCustomPiece 调用:', { positions, initialZ, pieceType });
+            
+            if (!positions || positions.length === 0) {
+                console.log('positions 为空，返回 null');
+                return null;
+            }
+            
+            // 计算边界（网格索引）
+            let minGridX = 9, maxGridX = 0;
+            let minGridY = 9, maxGridY = 0;
+            
+            positions.forEach(pos => {
+                minGridX = Math.min(minGridX, pos.x);
+                maxGridX = Math.max(maxGridX, pos.x);
+                minGridY = Math.min(minGridY, pos.y);
+                maxGridY = Math.max(maxGridY, pos.y);
+            });
+            
+            // 计算形状大小
+            const width = maxGridX - minGridX + 1;
+            const height = maxGridY - minGridY + 1;
+            
+            // 创建形状数组（最小 4x4x4）
+            const shapeSize = Math.max(4, width, height);
+            const shape = [];
+            for (let z = 0; z < shapeSize; z++) {
+                shape[z] = [];
+                for (let y = 0; y < shapeSize; y++) {
+                    shape[z][y] = [];
+                    for (let x = 0; x < shapeSize; x++) {
+                        shape[z][y][x] = 0;
+                    }
+                }
+            }
+            
+            // 将坐标填充到 shape 中（放在 z=1 层，与标准方块保持一致）
+            positions.forEach(pos => {
+                const localX = pos.x - minGridX;
+                const localY = pos.y - minGridY;
+                
+                if (localX >= 0 && localX < shapeSize && localY >= 0 && localY < shapeSize) {
+                    shape[1][localY][localX] = 1; // 使用 z=1 层
+                }
+            });
+            
+            console.log('自定义方块shape:', shape, '坐标:', positions);
+            
+            // 计算方块的几何中心（质心）
+            let sumX = 0, sumY = 0, sumZ = 0, count = 0;
+            for (let z = 0; z < shapeSize; z++) {
+                for (let y = 0; y < shapeSize; y++) {
+                    for (let x = 0; x < shapeSize; x++) {
+                        if (shape[z][y][x]) {
+                            sumX += x;
+                            sumY += y;
+                            sumZ += z;
+                            count++;
+                        }
+                    }
+                }
+            }
+            
+            // 计算几何中心（与generatePiece保持一致）
+            const cx = count > 0 ? sumX / count : 0;
+            const cy = count > 0 ? sumY / count : 0;
+            const cz = count > 0 ? sumZ / count : 0;
+            
+            // 计算相对于几何中心的偏移范围
+            let minLocalX = Infinity, maxLocalX = -Infinity;
+            let minLocalY = Infinity, maxLocalY = -Infinity;
+            for (let z = 0; z < shapeSize; z++) {
+                for (let y = 0; y < shapeSize; y++) {
+                    for (let x = 0; x < shapeSize; x++) {
+                        if (shape[z][y][x]) {
+                            const localX = x - cx;
+                            const localY = y - cy;
+                            minLocalX = Math.min(minLocalX, localX);
+                            maxLocalX = Math.max(maxLocalX, localX);
+                            minLocalY = Math.min(minLocalY, localY);
+                            maxLocalY = Math.max(maxLocalY, localY);
+                        }
+                    }
+                }
+            }
+            
+            // 设置初始位置 - 与generatePiece保持一致
+            let initialX = -cx; // X轴居中：将几何中心放在x=0
+            let initialY = 2 - cy; // Y轴：将几何中心放在y=2
+            
+            // 确保方块的所有单元格都在立方体范围内
+            if (initialX + minLocalX < -5) {
+                initialX = -5 - minLocalX;
+            }
+            if (initialX + maxLocalX >= 5) {
+                initialX = 4.99 - maxLocalX;
+            }
+            if (initialY + maxLocalY >= 5) {
+                initialY = 4.99 - maxLocalY;
+            }
+            if (initialY + minLocalY < -5) {
+                initialY = -5 - minLocalY;
+            }
+            
+            const customPiece = {
+                type: pieceType || 'CUSTOM',
+                shape: shape,
+                color: '#ff00ff', // 紫红色表示自定义方块
+                x: initialX,
+                y: initialY,
+                z: initialZ,
+                rotation: 0
+            };
+            
+            console.log('创建的自定义方块:', customPiece);
+            return customPiece;
+        }
+        
+        // 绕 x 轴旋转 3D 形状（shape[z][y][x]），让方块在 y-z 平面翻转
+        function rotateShapeX3D(shape) {
+            if (!shape || !shape.length) return null;
+            const depth = shape.length;          // 原始 z 维长度
+            const height = shape[0].length;      // 原始 y 维长度
+            const width = shape[0][0].length;    // x 维长度
+
+            const newDepth = height;
+            const newHeight = depth;
+            const newShape = new Array(newDepth);
+
+            for (let zNew = 0; zNew < newDepth; zNew++) {
+                newShape[zNew] = new Array(newHeight);
+                for (let yNew = 0; yNew < newHeight; yNew++) {
+                    newShape[zNew][yNew] = new Array(width).fill(0);
+                }
+            }
+
+            // 映射关系：让正向的 y 旋到更大的 z（朝后墙方向翻）
+            for (let zOld = 0; zOld < depth; zOld++) {
+                for (let yOld = 0; yOld < height; yOld++) {
+                    for (let x = 0; x < width; x++) {
+                        if (!shape[zOld][yOld][x]) continue;
+                        const zNew = yOld;              // y 轴映射到新的 z
+                        const yNew = depth - 1 - zOld;  // z 轴翻转到新的 y
+                        newShape[zNew][yNew][x] = 1;
+                    }
+                }
+            }
+            
+            // 返回完整 3D 形状，保持 4x4x4 尺寸不变
+            return newShape;
+        }
+
+        // 绕 y 轴旋转 3D 形状（shape[z][y][x]），在 x-z 平面旋转
+        function rotateShapeY3D(shape) {
+            if (!shape || !shape.length) return null;
+            const depth = shape.length;          // z 维长度
+            const height = shape[0].length;      // y 维长度
+            const width = shape[0][0].length;    // x 维长度
+
+            const newDepth = depth;
+            const newWidth = width;
+            const newShape = new Array(newDepth);
+
+            for (let zNew = 0; zNew < newDepth; zNew++) {
+                newShape[zNew] = new Array(height);
+                for (let y = 0; y < height; y++) {
+                    newShape[zNew][y] = new Array(newWidth).fill(0);
+                }
+            }
+
+            // 正向旋转：让 x 轴指向更大的 z（朝后墙方向翻转）
+            // 原 (zOld, xOld) -> 新 (zNew, xNew)
+            // 这里采用：zNew = xOld, xNew = depth - 1 - zOld
+            for (let zOld = 0; zOld < depth; zOld++) {
+                for (let y = 0; y < height; y++) {
+                    for (let xOld = 0; xOld < width; xOld++) {
+                        if (!shape[zOld][y][xOld]) continue;
+                        const zNew = xOld;
+                        const xNew = depth - 1 - zOld;
+                        if (zNew >= 0 && zNew < newDepth && xNew >= 0 && xNew < newWidth) {
+                            newShape[zNew][y][xNew] = 1;
+                        }
+                    }
+                }
+            }
+
+            return newShape;
+        }
+        
+        // 检查移动是否有效 - 完善的边界检查，考虑方块形状（暂基于第一层）
+        function isValidMove(piece, dx = 0, dz = 0, newShape = null) {
+            const shape3D = newShape || piece.shape;
+            const shape = shape3D[0];
+            const newX = piece.x + dx;
+            const newZ = piece.z + dz;
+            
+            // 精确的边界定义（参考文件坐标系统）
+            const minX = -Math.floor(gridSize / 2);
+            const maxX = Math.floor(gridSize / 2);
+            
+            for (let y = 0; y < shape.length; y++) {
+                for (let x = 0; x < shape[y].length; x++) {
+                    if (shape[y][x]) {
+                        const boardX = newX + x;
+                        
+                        // 检查x轴边界 - 确保方块的每个部分都在合法范围内
+                        if (boardX < minX || boardX >= maxX) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            
+            // 检查z轴边界（参考文件逻辑：movingCube.z > Math.floor(gridSize / 2)）
+            if (newZ > Math.floor(gridSize / 2)) {
+                return false; // 到达后墙，不能继续移动
+            }
+            
+            return true;
+        }
+        
+        // 后墙着色记录 - 将后墙视为 10x10 网格（x:0..9, y:0..9）
+        let backWallColors = new Map(); // 存储后墙网格点的颜色 {x_y: color}
+        
+        // 在后墙留下颜色标记，并返回"本次新增覆盖"的格子数量
+        function lockPiece(piece) {
+            // 计算几何中心，与其他函数保持一致
+            let sumX = 0, sumY = 0, sumZ = 0, count = 0;
+            for (let z = 0; z < piece.shape.length; z++) {
+                for (let y = 0; y < piece.shape[z].length; y++) {
+                    for (let x = 0; x < piece.shape[z][y].length; x++) {
+                        if (piece.shape[z][y][x]) {
+                            sumX += x;
+                            sumY += y;
+                            sumZ += z;
+                            count++;
+                        }
+                    }
+                }
+            }
+            const cx = count > 0 ? sumX / count : 0;
+            const cy = count > 0 ? sumY / count : 0;
+            
+            // 遍历 3D 形状的所有层，将所有体素投影到后墙
+            let newCovered = 0;
+            let totalCells = 0;
+            let skippedCells = 0;
+            
+            // 遍历所有 z 层
+            for (let z = 0; z < piece.shape.length; z++) {
+                const layer = piece.shape[z];
+                for (let y = 0; y < layer.length; y++) {
+                    for (let x = 0; x < layer[y].length; x++) {
+                        if (layer[y][x]) {
+                            totalCells++;
+                            // 使用几何中心计算boardX/boardY
+                            const localX = x - cx;
+                            const localY = y - cy;
+                            const boardX = piece.x + localX;
+                            const boardY = piece.y + localY;
+
+                            // 映射到后墙网格坐标（x:0..9, y:0..9），使用 Math.floor 确保是整数
+                            const backWallXIndex = Math.floor(boardX + Math.floor(gridSize / 2));
+                            // Y轴反转：网格索引 0 在上方，9在下方
+                            const backWallYIndex = Math.floor(gridSize / 2) - 1 - Math.floor(boardY);
+
+                            // 只处理在范围内的命中
+                            if (backWallXIndex < 0 || backWallXIndex >= gridSize) {
+                                skippedCells++;
+                                continue;
+                            }
+                            if (backWallYIndex < 0 || backWallYIndex >= gridSize) {
+                                skippedCells++;
+                                continue;
+                            }
+
+                            const key = `${backWallXIndex}_${backWallYIndex}`;
+
+                            // 只有命中尚未被覆盖的格子时，才算"新增覆盖"
+                            if (!backWallColors.has(key)) {
+                                newCovered++;
+                            }
+                            backWallColors.set(key, piece.color);
+                            
+                        }
+                    }
+                }
+            }
+            
+            return newCovered;
+        }
+        
+        // 清除完整的行
+        function clearLines() {
+            let linesCleared = 0;
+            
+            for (let y = gridHeight - 1; y >= 0; y--) {
+                if (gameGrid[y].every(cell => cell !== 0)) {
+                    gameGrid.splice(y, 1);
+                    gameGrid.unshift(Array(gridSize).fill(0));
+                    linesCleared++;
+                    y++; // 重新检查这一行
+                }
+            }
+            
+            if (linesCleared > 0) {
+                lines += linesCleared;
+                score += linesCleared * 100 * level;
+                
+                // 每10行升一级
+                if (lines >= level * 10) {
+                    level++;
+                    dropInterval = Math.max(100, 1000 - (level - 1) * 100);
+                }
+                
+                updateDisplay();
+            }
+        }
+        
+        // 移动当前方块 - 完善的边界检查系统
+        function movePiece(dx, dz) {
+            const newX = currentPiece.x + dx;
+            const newZ = currentPiece.z + dz;
+            
+            // 计算几何中心，与drawCurrentPiece保持一致
+            let sumX = 0, count = 0;
+            for (let z = 0; z < currentPiece.shape.length; z++) {
+                for (let y = 0; y < currentPiece.shape[z].length; y++) {
+                    for (let x = 0; x < currentPiece.shape[z][y].length; x++) {
+                        if (currentPiece.shape[z][y][x]) {
+                            sumX += x;
+                            count++;
+                        }
+                    }
+                }
+            }
+            if (count === 0) return false;
+            const cx = sumX / count;
+            
+            // 计算相对于几何中心的偏移范围
+            let minLocalX = Infinity, maxLocalX = -Infinity;
+            for (let z = 0; z < currentPiece.shape.length; z++) {
+                for (let y = 0; y < currentPiece.shape[z].length; y++) {
+                    for (let x = 0; x < currentPiece.shape[z][y].length; x++) {
+                        if (currentPiece.shape[z][y][x]) {
+                            const localX = x - cx;
+                            minLocalX = Math.min(minLocalX, localX);
+                            maxLocalX = Math.max(maxLocalX, localX);
+                        }
+                    }
+                }
+            }
+            
+            // 边界检查：确保所有单元格都在立方体范围内
+            // X轴范围：[-5, 5)
+            // 根据网格索引公式 gridX = floor(boardX + 5)
+            // boardX 在 [-5, -4) 时 gridX = 0 (左墙), boardX 在 [4, 5) 时 gridX = 9 (右墙)
+            const leftBound = newX + minLocalX;
+            const rightBound = newX + maxLocalX;
+            if (leftBound < -5 || rightBound >= 5) {
+                debugLog(`→ 边界阻止: newX=${newX.toFixed(1)}, min=${minLocalX.toFixed(1)}, max=${maxLocalX.toFixed(1)}, left=${leftBound.toFixed(1)}, right=${rightBound.toFixed(1)}`);
+                return false;
+            }
+            
+            // z轴边界检查（参考文件逻辑）
+            // z范围：[-Math.floor(gridSize/2), Math.floor(gridSize/2)]
+            if (newZ > Math.floor(gridSize / 2)) {
+                return false; // 到达后墙，不能继续移动
+            }
+            
+            currentPiece.x = newX;
+            currentPiece.z = newZ;
+            
+            // 输出移动信息
+            if (dx !== 0) {
+                debugLog(`→ ${dx > 0 ? '右移' : '左移'}: x=${newX.toFixed(1)}`);
+            }
+            if (dz !== 0) {
+                debugLog(`→ ${dz > 0 ? '后移' : '前移'}: z=${newZ.toFixed(1)}`);
+            }
+            
+            return true;
+        }
+
+        // 上下移动当前方块（高度 y 轴）
+        function movePieceY(dy) {
+            const newY = currentPiece.y + dy;
+            
+            // 计算几何中心，与drawCurrentPiece保持一致
+            let sumY = 0, count = 0;
+            for (let z = 0; z < currentPiece.shape.length; z++) {
+                for (let y = 0; y < currentPiece.shape[z].length; y++) {
+                    for (let x = 0; x < currentPiece.shape[z][y].length; x++) {
+                        if (currentPiece.shape[z][y][x]) {
+                            sumY += y;
+                            count++;
+                        }
+                    }
+                }
+            }
+            if (count === 0) return false;
+            const cy = sumY / count;
+            
+            // 计算相对于几何中心的偏移范围
+            let minLocalY = Infinity, maxLocalY = -Infinity;
+            for (let z = 0; z < currentPiece.shape.length; z++) {
+                for (let y = 0; y < currentPiece.shape[z].length; y++) {
+                    for (let x = 0; x < currentPiece.shape[z][y].length; x++) {
+                        if (currentPiece.shape[z][y][x]) {
+                            const localY = y - cy;
+                            minLocalY = Math.min(minLocalY, localY);
+                            maxLocalY = Math.max(maxLocalY, localY);
+                        }
+                    }
+                }
+            }
+            
+            // 边界检查：确保所有单元格都在立方体范围内
+            // Y轴范围：[-5, 5) (高10格)
+            // 根据网格索引公式 gridY = 4 - floor(boardY)
+            // boardY 在 [4, 5) 时 gridY = 0 (顶部), boardY 在 [-5, -4) 时 gridY = 9 (底部)
+            // 允许 boardY < 5 以便方块能移动到与顶面平齐
+            if (newY + minLocalY < -5 || newY + maxLocalY >= 5) {
+                return false;
+            }
+            currentPiece.y = newY;
+            return true;
+        }
+        
+        // 检查当前方块是否在边界内
+        function checkBounds() {
+            if (!currentPiece || !currentPiece.shape) return false;
+            
+            // 计算几何中心
+            let sumX = 0, sumY = 0, count = 0;
+            for (let z = 0; z < currentPiece.shape.length; z++) {
+                for (let y = 0; y < currentPiece.shape[z].length; y++) {
+                    for (let x = 0; x < currentPiece.shape[z][y].length; x++) {
+                        if (currentPiece.shape[z][y][x]) {
+                            sumX += x;
+                            sumY += y;
+                            count++;
+                        }
+                    }
+                }
+            }
+            if (count === 0) return false;
+            const cx = sumX / count;
+            const cy = sumY / count;
+            
+            // 计算相对于几何中心的偏移范围
+            let minLocalX = Infinity, maxLocalX = -Infinity;
+            let minLocalY = Infinity, maxLocalY = -Infinity;
+            for (let z = 0; z < currentPiece.shape.length; z++) {
+                for (let y = 0; y < currentPiece.shape[z].length; y++) {
+                    for (let x = 0; x < currentPiece.shape[z][y].length; x++) {
+                        if (currentPiece.shape[z][y][x]) {
+                            const localX = x - cx;
+                            const localY = y - cy;
+                            minLocalX = Math.min(minLocalX, localX);
+                            maxLocalX = Math.max(maxLocalX, localX);
+                            minLocalY = Math.min(minLocalY, localY);
+                            maxLocalY = Math.max(maxLocalY, localY);
+                        }
+                    }
+                }
+            }
+            
+            // X轴边界检查：[-5, 5)
+            const leftBound = currentPiece.x + minLocalX;
+            const rightBound = currentPiece.x + maxLocalX;
+            if (leftBound < -5 || rightBound >= 5) {
+                return false;
+            }
+            
+            // Y轴边界检查：[-5, 5)
+            if (currentPiece.y + minLocalY < -5 || currentPiece.y + maxLocalY >= 5) {
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // 旋转当前方块（绕 x 轴的 3D 翻转，正向）
+        function rotateCurrentPiece() {
+            if (!currentPiece || !currentPiece.shape) return;
+            const rotatedShape = rotateShapeX3D(currentPiece.shape);
+            if (!rotatedShape) return;
+            // 暂时不做边界校验，允许连续多次旋转
+            currentPiece.shape = rotatedShape;
+        }
+
+        // 反向旋转当前方块（绕 x 轴的逆向翻转）
+        function rotateCurrentPieceInverse() {
+            if (!currentPiece || !currentPiece.shape) return;
+            const oldShape = currentPiece.shape;
+            let rotated = currentPiece.shape;
+            // 连续三次正向旋转，相当于一次反向旋转
+            for (let i = 0; i < 3; i++) {
+                const nextShape = rotateShapeX3D(rotated);
+                if (!nextShape) return;
+                rotated = nextShape;
+            }
+            
+            // 尝试旋转
+            currentPiece.shape = rotated;
+            
+            // 检查边界，如果超出则撤销
+            if (!checkBounds()) {
+                currentPiece.shape = oldShape;
+                debugLog('→ 旋转被边界阻止');
+                return;
+            }
+            
+            debugLog('→ 绕X轴反向旋转 (↓)');
+        }
+
+        // 绕 y 轴旋转当前方块（正向）
+        function rotateCurrentPieceY() {
+            if (!currentPiece || !currentPiece.shape) return;
+            const oldShape = currentPiece.shape;
+            const rotatedShape = rotateShapeY3D(currentPiece.shape);
+            if (!rotatedShape) return;
+            
+            // 尝试旋转
+            currentPiece.shape = rotatedShape;
+            
+            // 检查边界，如果超出则撤销
+            if (!checkBounds()) {
+                currentPiece.shape = oldShape;
+                debugLog('→ 旋转被边界阻止');
+                return;
+            }
+            
+            debugLog('→ 绕Y轴正向旋转 (→)');
+        }
+
+        // 绕 y 轴反向旋转当前方块
+        function rotateCurrentPieceYInverse() {
+            if (!currentPiece || !currentPiece.shape) return;
+            const oldShape = currentPiece.shape;
+            let rotated = currentPiece.shape;
+            // 连续三次正向绕 y 轴旋转，相当于一次反向旋转
+            for (let i = 0; i < 3; i++) {
+                const nextShape = rotateShapeY3D(rotated);
+                if (!nextShape) return;
+                rotated = nextShape;
+            }
+            
+            // 尝试旋转
+            currentPiece.shape = rotated;
+            
+            // 检查边界，如果超出则撤销
+            if (!checkBounds()) {
+                currentPiece.shape = oldShape;
+                debugLog('→ 旋转被边界阻止');
+                return;
+            }
+            
+            debugLog('→ 绕Y轴反向旋转 (←)');
+        }
+        
+        // 快速移向后墙 - 与参考文件逻辑一致
+        function hardDrop() {
+            debugLog('→ 快速下落 (Space)');
+            // 直接移动到后墙位置，触发锁定逻辑
+            currentPiece.z = Math.floor(gridSize / 2) + 1; // 超过后墙边界，触发锁定
+            score += 10; // 快速移动奖励分数
+            lockCurrentPiece();
+        }
+        
+        // 锁定当前方块并生成新方块 - 只有铺满整面 10x10 后墙时才结算得分
+        function lockCurrentPiece() {
+            // 保存方块信息用于调试
+            lastLockedPiece = JSON.parse(JSON.stringify(currentPiece));
+            
+            // 根据本次真正"新铺满"的后墙格子数量计分
+            const newlyCoveredCells = lockPiece(currentPiece);
+            
+            // 每次锁定后立即更新显示，让后墙格数实时显示
+            updateDisplay();
+            
+            // 只有当后墙 10x10 全部被填满时才结算一次得分和行数
+            if (backWallColors.size >= gridSize * gridHeight) {
+                // 以整面后墙为单位计分，得分与 level 挂钩
+                const wallScore = 1000 * level;
+                score += wallScore;
+                lines += 1; // 将"铺满一面墙"视为消除一行
+
+                if (lines >= level * 10) {
+                    level++;
+                    dropInterval = Math.max(100, 1000 - (level - 1) * 100);
+                }
+                if (lines >= MAX_LINES) {
+                    gameOver();
+                    return;
+                }
+
+                // 清空后墙，开始新一轮铺满
+                backWallColors.clear();
+                updateDisplay();
+
+                // 弹出提示 overlay，告知玩家铺满了一面墙
+                showStatusOverlay(
+                    '墙已铺满！',
+                    `本次奖励：+${wallScore} 分\n当前总分：${score}`,
+                    false
+                );
+            }
+            
+            // 自动生成新方块
+            currentPiece = nextPiece;
+            nextPiece = generatePiece();
+            
+            // 更新下一个方块的显示
+            drawNextPiece();
+            
+            // 重置下落时间，让新方块有足够时间移动
+            lastDropTime = 0;
+            
+            // 重绘网格
+            draw3DGrid();
+        }
+        
+        // 游戏结束
+        function gameOver() {
+            gameRunning = false;
+            gamePaused = false;
+            showStatusOverlay(
+                '游戏结束',
+                `得分：${score}\n等级：${level}\n消除行数：${lines} / ${MAX_LINES}`,
+                true
+            );
+        }
+        
+        // 更新显示
+        function updateDisplay() {
+            document.getElementById('scoreValue').textContent = score;
+            document.getElementById('levelValue').textContent = level;
+            document.getElementById('linesValue').textContent = lines;
+            document.getElementById('wallCellsValue').textContent = backWallColors.size;
+        }
+
+        function drawNextPiece() {
+            if (!nextCtx || !nextPiece || !nextPiece.shape) return;
+            const width = nextCanvas.width;
+            const height = nextCanvas.height;
+            nextCtx.clearRect(0, 0, width, height);
+            
+            // 找到第一个非空层来预览
+            let shape2D = null;
+            for (let z = 0; z < nextPiece.shape.length; z++) {
+                const layer = nextPiece.shape[z];
+                // 检查这一层是否有方块
+                let hasBlock = false;
+                for (let y = 0; y < layer.length; y++) {
+                    for (let x = 0; x < layer[y].length; x++) {
+                        if (layer[y][x]) {
+                            hasBlock = true;
+                            break;
+                        }
+                    }
+                    if (hasBlock) break;
+                }
+                if (hasBlock) {
+                    shape2D = layer;
+                    break;
+                }
+            }
+            
+            if (!shape2D) return; // 如果没有找到非空层，直接返回
+            
+            const rows = shape2D.length;
+            const cols = shape2D[0].length;
+            const blockSize = Math.min(width / (cols + 1), height / (rows + 1));
+            const offsetX = (width - cols * blockSize) / 2;
+            const offsetY = (height - rows * blockSize) / 2;
+            nextCtx.fillStyle = '#ffffff10';
+            nextCtx.fillRect(0, 0, width, height);
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (shape2D[y][x]) {
+                        const px = offsetX + x * blockSize;
+                        const py = offsetY + y * blockSize;
+                        nextCtx.fillStyle = nextPiece.color;
+                        nextCtx.fillRect(px, py, blockSize - 4, blockSize - 4);
+                        nextCtx.strokeStyle = '#ffffff';
+                        nextCtx.lineWidth = 1;
+                        nextCtx.strokeRect(px, py, blockSize - 4, blockSize - 4);
+                    }
+                }
+            }
+        }
+        
+        // 游戏循环 - 完全按照参考文件的moveCubeTowardBack逻辑
+        function gameLoop(currentTime) {
+            if (!gameRunning || gamePaused) return;
+            
+            if (currentTime - lastDropTime > dropInterval) {
+                // 计算方块的几何中心和最大Z偏移
+                let sumZ = 0, count = 0, maxLocalZ = -Infinity;
+                for (let z = 0; z < currentPiece.shape.length; z++) {
+                    for (let y = 0; y < currentPiece.shape[z].length; y++) {
+                        for (let x = 0; x < currentPiece.shape[z][y].length; x++) {
+                            if (currentPiece.shape[z][y][x]) {
+                                sumZ += z;
+                                count++;
+                            }
+                        }
+                    }
+                }
+                const cz = count > 0 ? sumZ / count : 0;
+                
+                // 计算相对于几何中心的最大Z偏移
+                for (let z = 0; z < currentPiece.shape.length; z++) {
+                    for (let y = 0; y < currentPiece.shape[z].length; y++) {
+                        for (let x = 0; x < currentPiece.shape[z][y].length; x++) {
+                            if (currentPiece.shape[z][y][x]) {
+                                maxLocalZ = Math.max(maxLocalZ, z - cz);
+                            }
+                        }
+                    }
+                }
+                
+                // 检查方块后边缘下一步是否会接触或超出后墙
+                const nextZ = currentPiece.z + 1;
+                const backEdge = nextZ + maxLocalZ;
+                
+                if (backEdge >= Math.floor(gridSize / 2)) {
+                    // 方块后边缘接触后墙，锁定当前位置
+                    debugLog(`→ 到达后墙，锁定方块 (后边缘: ${(currentPiece.z + maxLocalZ).toFixed(1)})`);
+                    lockCurrentPiece();
+                } else {
+                    // 向后墙移动（z方向增加）
+                    currentPiece.z = nextZ;
+                    
+                    if (currentPiece.z >= 0) {
+                        // 只在进入后半空间时输出调试信息
+                        debugLog(`→ 自动下落: z=${currentPiece.z}`);
+                    }
+                }
+                
+                draw3DGrid();
+                lastDropTime = currentTime;
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // 绘制3D网格
+        function draw3DGrid() {
+            if (!ctx || !canvas) return; // 确保画布已初始化
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const roomSize = 300;
+            const step = roomSize / gridSize;
+            
+            // 调试：显示所有调试数据
+            let debugLines = [];
+            
+            // 显示错误日志
+            if (errorLogs.length > 0) {
+                debugLines.push('=== 错误日志 ===');
+                errorLogs.forEach(log => debugLines.push(log));
+                debugLines.push('===================');
+                debugLines.push('');
+            }
+            
+            // 显示最后锁定的方块信息（如果有）
+            const displayPiece = currentPiece || lastLockedPiece;
+            if (displayPiece && displayPiece.shape) {
+                debugLines.push(`方块类型: ${displayPiece.type}`);
+                debugLines.push(`方块世界坐标: x=${displayPiece.x.toFixed(2)}, y=${displayPiece.y.toFixed(2)}, z=${displayPiece.z}`);
+                
+                // 计算几何中心，与drawCurrentPiece保持一致
+                let sumX = 0, sumY = 0, sumZ = 0, count = 0;
+                for (let z = 0; z < displayPiece.shape.length; z++) {
+                    for (let y = 0; y < displayPiece.shape[z].length; y++) {
+                        for (let x = 0; x < displayPiece.shape[z][y].length; x++) {
+                            if (displayPiece.shape[z][y][x]) {
+                                sumX += x;
+                                sumY += y;
+                                sumZ += z;
+                                count++;
+                            }
+                        }
+                    }
+                }
+                const cx = count > 0 ? sumX / count : 0;
+                const cy = count > 0 ? sumY / count : 0;
+                const cz = count > 0 ? sumZ / count : 0;
+                
+                // 计算方块的所有体素位置（网格索引）
+                let frontWallPositions = [];
+                let backWallPositions = [];
+                let voxelDetails = []; // 体素详细信息
+                
+                for (let z = 0; z < displayPiece.shape.length; z++) {
+                    for (let y = 0; y < displayPiece.shape[z].length; y++) {
+                        for (let x = 0; x < displayPiece.shape[z][y].length; x++) {
+                            if (displayPiece.shape[z][y][x]) {
+                                // 使用几何中心计算boardX/boardY
+                                const localX = x - cx;
+                                const localY = y - cy;
+                                const boardX = displayPiece.x + localX;
+                                const boardY = displayPiece.y + localY;
+                                const gridX = Math.floor(boardX + Math.floor(gridSize / 2));
+                                // Y轴反转：网格索引 0 在上方，9在下方
+                                const gridY = Math.floor(gridSize / 2) - 1 - Math.floor(boardY);
+                                
+                                frontWallPositions.push(`[${gridX},${gridY}]`);
+                                // 后墙落点位置与前墙相同（只有Z轴变化）
+                                backWallPositions.push(`[${gridX},${gridY}]`);
+                                
+                                // 记录体素详细信息
+                                voxelDetails.push(`  体素[${x},${y},${z}]: board(${boardX.toFixed(1)},${boardY.toFixed(1)}) -> grid[${gridX},${gridY}]`);
+                            }
+                        }
+                    }
+                }
+                
+                debugLines.push('');
+                debugLines.push(`网格位置: ${frontWallPositions.join(' ')}`);
+                
+                // 体素详情（可折叠）
+                if (voxelDetails.length <= 4) {
+                    debugLines.push('体素详情:');
+                    voxelDetails.forEach(detail => debugLines.push(detail));
+                } else {
+                    debugLines.push(`体素数量: ${voxelDetails.length} 个`);
+                }
+                
+                debugLines.push('');
+                debugLines.push(`后墙填充: ${backWallColors.size} / ${gridSize * gridHeight} (${(backWallColors.size / (gridSize * gridHeight) * 100).toFixed(1)}%)`);
+                
+                // 显示后墙所有彩色方块坐标
+                if (backWallColors.size > 0 && backWallColors.size <= 20) {
+                    debugLines.push(`后墙坐标:`);
+                    let coordList = [];
+                    for (let [key, color] of backWallColors) {
+                        const [x, y] = key.split('_').map(Number);
+                        coordList.push(`[${x},${y}]`);
+                    }
+                    // 每行显示10个坐标
+                    for (let i = 0; i < coordList.length; i += 10) {
+                        debugLines.push('  ' + coordList.slice(i, i + 10).join(' '));
+                    }
+                }
+            }
+            
+            // 更新到文本区域，方便复制
+            const debugTextarea = document.getElementById('debugData');
+            if (debugTextarea && debugLines.length > 0) {
+                // 保留现有的调试日志，只更新方块信息部分
+                const currentValue = debugTextarea.value;
+                const separator = '\n--- 方块状态 ---\n';
+                const blockInfo = debugLines.join('\n');
+                
+                // 如果已有内容，在分隔线后更新方块信息
+                if (currentValue.includes('--- 方块状态 ---')) {
+                    const parts = currentValue.split('--- 方块状态 ---');
+                    debugTextarea.value = parts[0] + separator + blockInfo;
+                } else if (currentValue.trim()) {
+                    // 如果有其他内容但没有分隔线，追加方块信息
+                    debugTextarea.value = currentValue + separator + blockInfo;
+                } else {
+                    // 如果是空的，直接设置
+                    debugTextarea.value = blockInfo;
+                }
+                
+                // 自动滚动到底部
+                debugTextarea.scrollTop = debugTextarea.scrollHeight;
+            }
+            
+            // 计算旋转角度的弧度
+            const angleRad = (rotation * Math.PI) / 180;
+            const cosAngle = Math.cos(angleRad);
+            const sinAngle = Math.sin(angleRad);
+            
+            // 定义立方体的六个面
+            const cubeSize = roomSize / 2;
+            
+            // 绘制游戏底面网格
+            ctx.strokeStyle = '#ccc'; // 浅灰色
+            ctx.lineWidth = 0.5; // 更细的线条
+            
+            // 绘制地面网格 (y = +cubeSize，20×10网格：Z×X)
+            // 横线 (x方向，10格宽)
+            for (let i = 0; i <= gridDepth; i++) {
+                ctx.beginPath();
+                for (let j = 0; j <= gridSize; j++) {
+                    const z = (i - gridDepth / 2) * step;
+                    const x = (j - gridSize / 2) * step;
+                    
+                    // 应用旋转
+                    const rotatedX = x * cosAngle - z * sinAngle;
+                    const rotatedZ = x * sinAngle + z * cosAngle;
+                    
+                    const point = project3D(rotatedX, cubeSize, rotatedZ, centerX, centerY, distance);
+                    
+                    if (j === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // 纵线 (z方向，20格深)
+            for (let i = 0; i <= gridSize; i++) {
+                ctx.beginPath();
+                for (let j = 0; j <= gridDepth; j++) {
+                    const x = (i - gridSize / 2) * step;
+                    const z = (j - gridDepth / 2) * step;
+                    
+                    // 应用旋转
+                    const rotatedX = x * cosAngle - z * sinAngle;
+                    const rotatedZ = x * sinAngle + z * cosAngle;
+                    
+                    const point = project3D(rotatedX, cubeSize, rotatedZ, centerX, centerY, distance);
+                    
+                    if (j === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // 绘制后墙网格 (z = +cubeSize，10×10网格)
+            ctx.strokeStyle = '#bbb'; // 浅灰色
+            ctx.lineWidth = 0.5; // 更细的线条
+            // 水平线 (x方向，10格宽)
+            for (let i = 0; i <= gridSize; i++) {
+                ctx.beginPath();
+                for (let j = 0; j <= gridSize; j++) {
+                    const x = (i - gridSize / 2) * step;
+                    const y = (j - gridSize / 2) * step;
+                    const z = cubeSize;
+                    
+                    // 应用旋转
+                    const rotatedX = x * cosAngle - z * sinAngle;
+                    const rotatedZ = x * sinAngle + z * cosAngle;
+                    
+                    const point = project3D(rotatedX, y, rotatedZ, centerX, centerY, distance);
+                    
+                    if (j === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // 垂直线 (y方向，10格高)
+            for (let i = 0; i <= gridSize; i++) {
+                ctx.beginPath();
+                for (let j = 0; j <= gridSize; j++) {
+                    const x = (j - gridSize / 2) * step;
+                    const y = (i - gridSize / 2) * step;
+                    const z = cubeSize;
+                    
+                    // 应用旋转
+                    const rotatedX = x * cosAngle - z * sinAngle;
+                    const rotatedZ = x * sinAngle + z * cosAngle;
+                    
+                    const point = project3D(rotatedX, y, rotatedZ, centerX, centerY, distance);
+                    
+                    if (j === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // 绘制后墙网格坐标标签（10×10网格）
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 10px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let yIndex = 0; yIndex < gridSize; yIndex++) {
+                for (let xIndex = 0; xIndex < gridSize; xIndex++) {
+                    const worldX = (xIndex - Math.floor(gridSize / 2) + 0.5) * step;
+                    const worldY = (yIndex - Math.floor(gridSize / 2) + 0.5) * step;
+                    const worldZ = cubeSize;
+                    
+                    // 应用旋转
+                    const rotatedX = worldX * cosAngle - worldZ * sinAngle;
+                    const rotatedZ = worldX * sinAngle + worldZ * cosAngle;
+                    
+                    const point = project3D(rotatedX, worldY, rotatedZ, centerX, centerY, distance);
+                    
+                    // 绘制坐标标签
+                    ctx.fillText(`${xIndex},${yIndex}`, point.x, point.y);
+                }
+            }
+            
+            // 绘制后墙着色区域 - 10x20 网格逻辑
+            for (let [key, color] of backWallColors) {
+                const [xIndex, yIndex] = key.split('_').map(Number);
+                
+                // 将后墙网格索引转换为格子中心坐标（避免交叉点）
+                const worldX = (xIndex - Math.floor(gridSize / 2) + 0.5) * step; // 加0.5偏移到格子中心
+                const worldZ = cubeSize; // 后墙位置
+                
+                // 在后墙网格上绘制着色方块 - 以格子中心为准，yIndex 现在对应后墙的 y 坐标（0-19）
+                const yPosition = (yIndex - Math.floor(gridHeight / 2) + 0.5) * step - cubeSize + cubeSize * 1.0; // 加0.5偏移到格子中心
+                const halfStep = step * 0.5; // 与网格格子大小完全一致
+                
+                // 计算后墙上的四个顶点 - 以格子中心为基准
+                const vertices = [
+                    { x: worldX - halfStep, y: yPosition - halfStep, z: worldZ },
+                    { x: worldX + halfStep, y: yPosition - halfStep, z: worldZ },
+                    { x: worldX + halfStep, y: yPosition + halfStep, z: worldZ },
+                    { x: worldX - halfStep, y: yPosition + halfStep, z: worldZ }
+                ];
+                
+                // 投影顶点
+                const projectedVertices = vertices.map(vertex => {
+                    const rotatedX = vertex.x * cosAngle - vertex.z * sinAngle;
+                    const rotatedZ = vertex.x * sinAngle + vertex.z * cosAngle;
+                    return project3D(rotatedX, vertex.y, rotatedZ, centerX, centerY, distance);
+                });
+                
+                // 绘制着色方块
+                ctx.fillStyle = color + '60'; // 半透明
+                ctx.beginPath();
+                ctx.moveTo(projectedVertices[0].x, projectedVertices[0].y);
+                ctx.lineTo(projectedVertices[1].x, projectedVertices[1].y);
+                ctx.lineTo(projectedVertices[2].x, projectedVertices[2].y);
+                ctx.lineTo(projectedVertices[3].x, projectedVertices[3].y);
+                ctx.closePath();
+                ctx.fill();
+                
+                // 绘制边框以更好地显示对齐
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(projectedVertices[0].x, projectedVertices[0].y);
+                ctx.lineTo(projectedVertices[1].x, projectedVertices[1].y);
+                ctx.lineTo(projectedVertices[2].x, projectedVertices[2].y);
+                ctx.lineTo(projectedVertices[3].x, projectedVertices[3].y);
+                ctx.closePath();
+                ctx.stroke();
+                
+                // 在彩色方块中心显示后墙索引
+                const centerX_proj = (projectedVertices[0].x + projectedVertices[2].x) / 2;
+                const centerY_proj = (projectedVertices[0].y + projectedVertices[2].y) / 2;
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 10px monospace';
+                ctx.fillText(`${xIndex},${yIndex}`, centerX_proj - 10, centerY_proj + 3);
+            }
+            
+            // 绘制前墙网格 (z = -cubeSize，10×10网格) - 使用浅红色虚线
+            ctx.strokeStyle = '#ffaaaa'; // 浅红色
+            ctx.lineWidth = 0.5; // 更细的线条
+            ctx.setLineDash([3, 3]); // 设置虚线样式：3px实线，3px间隔
+            
+            // 水平线 (x方向，10格宽)
+            for (let i = 0; i <= gridSize; i++) {
+                ctx.beginPath();
+                for (let j = 0; j <= gridSize; j++) {
+                    const x = (i - gridSize / 2) * step;
+                    const y = (j - gridSize / 2) * step;
+                    const z = -cubeSize; // 前墙位置
+                    
+                    // 应用旋转
+                    const rotatedX = x * cosAngle - z * sinAngle;
+                    const rotatedZ = x * sinAngle + z * cosAngle;
+                    
+                    const point = project3D(rotatedX, y, rotatedZ, centerX, centerY, distance);
+                    
+                    if (j === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // 垂直线 (y方向，10格高)
+            for (let i = 0; i <= gridSize; i++) {
+                ctx.beginPath();
+                for (let j = 0; j <= gridSize; j++) {
+                    const x = (j - gridSize / 2) * step;
+                    const y = (i - gridSize / 2) * step;
+                    const z = -cubeSize; // 前墙位置
+                    
+                    // 应用旋转
+                    const rotatedX = x * cosAngle - z * sinAngle;
+                    const rotatedZ = x * sinAngle + z * cosAngle;
+                    
+                    const point = project3D(rotatedX, y, rotatedZ, centerX, centerY, distance);
+                    
+                    if (j === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // 恢复实线样式
+            ctx.setLineDash([]);
+            
+            // 绘制前墙网格坐标标签 - 使用红色字体（10×10网格）
+            ctx.fillStyle = '#ff0000';
+            ctx.font = 'bold 10px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let yIndex = 0; yIndex < gridSize; yIndex++) {
+                for (let xIndex = 0; xIndex < gridSize; xIndex++) {
+                    const worldX = (xIndex - Math.floor(gridSize / 2) + 0.5) * step;
+                    const worldY = (yIndex - Math.floor(gridSize / 2) + 0.5) * step;
+                    const worldZ = -cubeSize; // 前墙位置
+                    
+                    // 应用旋转
+                    const rotatedX = worldX * cosAngle - worldZ * sinAngle;
+                    const rotatedZ = worldX * sinAngle + worldZ * cosAngle;
+                    
+                    const point = project3D(rotatedX, worldY, rotatedZ, centerX, centerY, distance);
+                    
+                    // 绘制坐标标签（反转 Y 轴，使 0 在上，9 在下）
+                    const displayYIndex = gridSize - 1 - yIndex;
+                    ctx.fillText(`${xIndex},${displayYIndex}`, point.x, point.y);
+                }
+            }
+            
+            // 绘制左墙网格 (x = -cubeSize) - 仅绘制从前墙到后墙的连接线
+            ctx.strokeStyle = '#ccc'; // 浅灰色
+            ctx.lineWidth = 0.5; // 更细的线条
+            // 只绘制前墙和后墙边缘的水平线 (z方向)
+            for (let i = 0; i <= gridSize; i++) {
+                const x = -cubeSize;
+                const y = (i - gridSize / 2) * step;
+                
+                // 前墙到后墙的线
+                ctx.beginPath();
+                const zFront = -gridDepth / 2 * step;
+                const zBack = gridDepth / 2 * step;
+                
+                // 前墙点
+                const rotatedXFront = x * cosAngle - zFront * sinAngle;
+                const rotatedZFront = x * sinAngle + zFront * cosAngle;
+                const pointFront = project3D(rotatedXFront, y, rotatedZFront, centerX, centerY, distance);
+                
+                // 后墙点
+                const rotatedXBack = x * cosAngle - zBack * sinAngle;
+                const rotatedZBack = x * sinAngle + zBack * cosAngle;
+                const pointBack = project3D(rotatedXBack, y, rotatedZBack, centerX, centerY, distance);
+                
+                ctx.moveTo(pointFront.x, pointFront.y);
+                ctx.lineTo(pointBack.x, pointBack.y);
+                ctx.stroke();
+            }
+            
+            // 添加左墙的纵线 (从地面到顶面)
+            ctx.strokeStyle = '#ccc'; // 浅灰色
+            ctx.lineWidth = 0.5; // 更细的线条
+            for (let i = 0; i <= gridSize; i++) {
+                const z = (i - gridSize / 2) * step;
+                const x = -cubeSize;
+                
+                // 地面点
+                const groundRotatedX = x * cosAngle - z * sinAngle;
+                const groundRotatedZ = x * sinAngle + z * cosAngle;
+                const groundPoint = project3D(groundRotatedX, cubeSize, groundRotatedZ, centerX, centerY, distance);
+                
+                // 顶面点
+                const topRotatedX = x * cosAngle - z * sinAngle;
+                const topRotatedZ = x * sinAngle + z * cosAngle;
+                const topPoint = project3D(topRotatedX, -cubeSize, topRotatedZ, centerX, centerY, distance);
+                
+                ctx.beginPath();
+                ctx.moveTo(groundPoint.x, groundPoint.y);
+                ctx.lineTo(topPoint.x, topPoint.y);
+                ctx.stroke();
+            }
+            ctx.lineWidth = 1;
+            
+            // 绘制右墙网格 (x = +cubeSize) - 仅绘制从前墙到后墙的连接线
+            ctx.strokeStyle = '#ccc'; // 浅灰色
+            ctx.lineWidth = 0.5; // 更细的线条
+            // 只绘制前墙和后墙边缘的水平线 (z方向)
+            for (let i = 0; i <= gridSize; i++) {
+                const x = cubeSize;
+                const y = (i - gridSize / 2) * step;
+                
+                // 前墙到后墙的线
+                ctx.beginPath();
+                const zFront = -gridDepth / 2 * step;
+                const zBack = gridDepth / 2 * step;
+                
+                // 前墙点
+                const rotatedXFront = x * cosAngle - zFront * sinAngle;
+                const rotatedZFront = x * sinAngle + zFront * cosAngle;
+                const pointFront = project3D(rotatedXFront, y, rotatedZFront, centerX, centerY, distance);
+                
+                // 后墙点
+                const rotatedXBack = x * cosAngle - zBack * sinAngle;
+                const rotatedZBack = x * sinAngle + zBack * cosAngle;
+                const pointBack = project3D(rotatedXBack, y, rotatedZBack, centerX, centerY, distance);
+                
+                ctx.moveTo(pointFront.x, pointFront.y);
+                ctx.lineTo(pointBack.x, pointBack.y);
+                ctx.stroke();
+            }
+            
+            // 添加右墙的纵线 (从地面到顶面)
+            ctx.strokeStyle = '#ccc'; // 浅灰色
+            ctx.lineWidth = 0.5; // 更细的线条
+            for (let i = 0; i <= gridSize; i++) {
+                const z = (i - gridSize / 2) * step;
+                const x = cubeSize;
+                
+                // 地面点
+                const groundRotatedX = x * cosAngle - z * sinAngle;
+                const groundRotatedZ = x * sinAngle + z * cosAngle;
+                const groundPoint = project3D(groundRotatedX, cubeSize, groundRotatedZ, centerX, centerY, distance);
+                
+                // 顶面点
+                const topRotatedX = x * cosAngle - z * sinAngle;
+                const topRotatedZ = x * sinAngle + z * cosAngle;
+                const topPoint = project3D(topRotatedX, -cubeSize, topRotatedZ, centerX, centerY, distance);
+                
+                ctx.beginPath();
+                ctx.moveTo(groundPoint.x, groundPoint.y);
+                ctx.lineTo(topPoint.x, topPoint.y);
+                ctx.stroke();
+            }
+            ctx.lineWidth = 1;
+            
+            // 绘制顶面网格 (y = -cubeSize)
+            ctx.strokeStyle = '#ddd'; // 浅灰色
+            ctx.lineWidth = 0.5; // 更细的线条
+            for (let i = 0; i <= gridSize; i++) {
+                // 横线 (x方向)
+                ctx.beginPath();
+                for (let j = 0; j <= gridSize; j++) {
+                    const x = (i - gridSize / 2) * step;
+                    const z = (j - gridSize / 2) * step;
+                    const y = -cubeSize;
+                    
+                    // 应用旋转
+                    const rotatedX = x * cosAngle - z * sinAngle;
+                    const rotatedZ = x * sinAngle + z * cosAngle;
+                    
+                    const point = project3D(rotatedX, y, rotatedZ, centerX, centerY, distance);
+                    
+                    if (j === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                }
+                ctx.stroke();
+                
+                // 纵线 (z方向)
+                ctx.beginPath();
+                for (let j = 0; j <= gridSize; j++) {
+                    const x = (j - gridSize / 2) * step;
+                    const z = (i - gridSize / 2) * step;
+                    const y = -cubeSize;
+                    
+                    // 应用旋转
+                    const rotatedX = x * cosAngle - z * sinAngle;
+                    const rotatedZ = x * sinAngle + z * cosAngle;
+                    
+                    const point = project3D(rotatedX, y, rotatedZ, centerX, centerY, distance);
+                    
+                    if (j === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // 绘制游戏区域的主要框架边框
+            ctx.strokeStyle = '#999'; // 浅灰色
+            ctx.lineWidth = 1; // 更细的线条
+            
+            // 定义立方体的8个顶点
+            const vertices = [
+                // 底面 (y = +cubeSize)
+                { x: -cubeSize, y: cubeSize, z: -cubeSize },
+                { x: cubeSize, y: cubeSize, z: -cubeSize },
+                { x: cubeSize, y: cubeSize, z: cubeSize },
+                { x: -cubeSize, y: cubeSize, z: cubeSize },
+                // 顶面 (y = -cubeSize)
+                { x: -cubeSize, y: -cubeSize, z: -cubeSize },
+                { x: cubeSize, y: -cubeSize, z: -cubeSize },
+                { x: cubeSize, y: -cubeSize, z: cubeSize },
+                { x: -cubeSize, y: -cubeSize, z: cubeSize }
+            ];
+            
+            // 顶点变换
+            const projectedVertices = vertices.map(vertex => {
+                const rotatedX = vertex.x * cosAngle - vertex.z * sinAngle;
+                const rotatedZ = vertex.x * sinAngle + vertex.z * cosAngle;
+                return project3D(rotatedX, vertex.y, rotatedZ, centerX, centerY, distance);
+            });
+            
+            // 绘制框架的12条边
+            const edges = [
+                // 底面
+                [0, 1], [1, 2], [2, 3], [3, 0],
+                // 顶面
+                [4, 5], [5, 6], [6, 7], [7, 4],
+                // 垂直边
+                [0, 4], [1, 5], [2, 6], [3, 7]
+            ];
+            
+            edges.forEach(edge => {
+                const start = projectedVertices[edge[0]];
+                const end = projectedVertices[edge[1]];
+                
+                ctx.beginPath();
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+                ctx.stroke();
+            });
+            
+            // 绘制已锁定的方块
+            drawLockedBlocks(centerX, centerY, step, angleRad, cosAngle, sinAngle);
+            
+            // 绘制当前活动方块
+            if (currentPiece && currentPiece.type) {
+                drawCurrentPiece(centerX, centerY, step, angleRad, cosAngle, sinAngle);
+            }
+        }
+        
+        // 绘制已锁定的方块 - 现在改为在后墙上着色，不需要单独绘制
+        function drawLockedBlocks(centerX, centerY, step, angleRad, cosAngle, sinAngle) {
+            // 锁定的方块已经通过后墙着色显示，这里留空
+        }
+        
+        // 绘制当前活动方块（3D 体素版本，绕方块自身几何中心）
+        function drawCurrentPiece(centerX, centerY, step, angleRad, cosAngle, sinAngle) {
+            // 设置合成模式为source-over，防止颜色叠加
+            ctx.globalCompositeOperation = 'source-over';
+            
+            const cubeSize = step * 1.0; // 网格单元高度
+            const shape3D = currentPiece.shape; // shape[z][y][x]
+            if (!shape3D || !shape3D.length) return;
+
+            const depth = shape3D.length;
+            const height = shape3D[0].length;
+            const width = shape3D[0][0].length;
+
+            // 计算当前形状的几何中心（质心）
+            let sumX = 0, sumY = 0, sumZ = 0, count = 0;
+            for (let zLocal = 0; zLocal < depth; zLocal++) {
+                for (let yLocal = 0; yLocal < height; yLocal++) {
+                    for (let xLocal = 0; xLocal < width; xLocal++) {
+                        if (!shape3D[zLocal][yLocal][xLocal]) continue;
+                        sumX += xLocal;
+                        sumY += yLocal;
+                        sumZ += zLocal;
+                        count++;
+                    }
+                }
+            }
+            if (count === 0) return;
+            const cx = sumX / count;
+            const cy = sumY / count;
+            const cz = sumZ / count;
+            
+            // 计算方块的边界（相对于几何中心）
+            let minLocalX = Infinity, maxLocalX = -Infinity;
+            let minLocalY = Infinity, maxLocalY = -Infinity;
+            let minLocalZ = Infinity, maxLocalZ = -Infinity;
+            for (let zLocal = 0; zLocal < depth; zLocal++) {
+                for (let yLocal = 0; yLocal < height; yLocal++) {
+                    for (let xLocal = 0; xLocal < width; xLocal++) {
+                        if (!shape3D[zLocal][yLocal][xLocal]) continue;
+                        const localX = xLocal - cx;
+                        const localY = yLocal - cy;
+                        const localZ = zLocal - cz;
+                        minLocalX = Math.min(minLocalX, localX);
+                        maxLocalX = Math.max(maxLocalX, localX);
+                        minLocalY = Math.min(minLocalY, localY);
+                        maxLocalY = Math.max(maxLocalY, localY);
+                        minLocalZ = Math.min(minLocalZ, localZ);
+                        maxLocalZ = Math.max(maxLocalZ, localZ);
+                    }
+                }
+            }
+            
+            // 计算方块的实际边界
+            const blockMinX = currentPiece.x + minLocalX;
+            const blockMaxX = currentPiece.x + maxLocalX;
+            const blockMinY = currentPiece.y + minLocalY;
+            const blockMaxY = currentPiece.y + maxLocalY;
+            const blockMinZ = currentPiece.z + minLocalZ;
+            const blockMaxZ = currentPiece.z + maxLocalZ;
+
+            // 绘制时使用相对几何中心的局部坐标，再叠加 currentPiece 的整体平移
+            for (let zLocal = 0; zLocal < depth; zLocal++) {
+                for (let yLocal = 0; yLocal < height; yLocal++) {
+                    for (let xLocal = 0; xLocal < width; xLocal++) {
+                        if (!shape3D[zLocal][yLocal][xLocal]) continue;
+
+                        // 相对中心的局部坐标
+                        const localX = xLocal - cx;
+                        const localY = yLocal - cy;
+                        const localZ = zLocal - cz;
+
+                        // 将几何中心放在 currentPiece.(x,y,z) 所在的格子中
+                        const boardX = currentPiece.x + localX;
+                        const boardY = currentPiece.y + localY;
+                        const boardZ = currentPiece.z + localZ;
+
+                        // 计算立方体的3D位置（以格子中心为基准）
+                        // 所有轴都应该对齐到网格单元中心，使用 (board + 0.5) * step
+                        
+                        // X轴：相对于世界中心，boardX=0在中心
+                        // boardX 范围 [-5, 5)，step=30
+                        // boardX = -5 → worldX = -135 (左墙内侧第一格中心)
+                        // boardX = 0 → worldX = 15 (中心格中心)
+                        // boardX = 4 → worldX = 135 (右墙内侧最后格中心)
+                        const worldX = (boardX + 0.5) * step;
+                        
+                        // Y轴：地面在 y = +150，向上为负
+                        // boardY 范围 [-5, 5)，对应10个网格
+                        // boardY = -5 → worldY = +135 (地面上方第一层中心)
+                        // boardY = -4 → worldY = +105 (地面上方第二层中心)
+                        // boardY = 4 → worldY = -135 (顶面下方第一层中心)
+                        const worldY = step * gridSize / 2 - (boardY + gridSize / 2 + 0.5) * step;
+                        
+                        // Z 轴：相对于世界中心，boardZ=0在中心
+                        // boardZ 范围 [-10, 10]，对应21个位置
+                        // 前墙在 z = -150，后墙在 z = +150
+                        // boardZ = -10 → worldZ = -135 (前墙内侧第一格中心)
+                        // boardZ = 0 → worldZ = 15 (中心格中心)
+                        // boardZ = 9 → worldZ = 285 (后墙位置)
+                        const worldZ = (boardZ + 0.5) * step;
+
+                        // 检测哪些面是外部面(没有相邻方块)
+                        const hasLeft = xLocal > 0 && shape3D[zLocal][yLocal][xLocal - 1];
+                        const hasRight = xLocal < width - 1 && shape3D[zLocal][yLocal][xLocal + 1];
+                        const hasTop = yLocal > 0 && shape3D[zLocal][yLocal - 1][xLocal];
+                        const hasBottom = yLocal < height - 1 && shape3D[zLocal][yLocal + 1][xLocal];
+                        const hasFront = zLocal > 0 && shape3D[zLocal - 1][yLocal][xLocal];
+                        const hasBack = zLocal < depth - 1 && shape3D[zLocal + 1][yLocal][xLocal];
+                        
+                        // 内部面隐藏功能已验证正常工作
+                        
+                        // 只绘制外部面
+                        const visibleFaces = {
+                            left: !hasLeft,
+                            right: !hasRight,
+                            top: !hasTop,
+                            bottom: !hasBottom,
+                            front: !hasFront,
+                            back: !hasBack
+                        };
+                        
+                        // 常规俄罗斯方块样式：所有面都使用纯色
+                        const alignedFaces = {
+                            left: true,
+                            right: true,
+                            top: true,
+                            bottom: true,
+                            front: true,
+                            back: true
+                        };
+                        
+                        // 方块大小保持与网格大小一致，不进行缩放
+                        // 前墙和后墙的网格大小都是 step
+                        drawSingleBlock(
+                            centerX,
+                            centerY,
+                            worldX,
+                            worldY,
+                            worldZ,
+                            step,
+                            currentPiece.color,
+                            cosAngle,
+                            sinAngle,
+                            step,
+                            alignedFaces
+                        );
+                    }
+                }
+            }
+        }
+        
+        // 颜色深浅调整函数
+        function shadeColor(color, percent) {
+            const num = parseInt(color.replace("#",""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
+        }
+        
+        // 绘制单个方块 - 单位立方体，边长由 stepSize 决定
+        function drawSingleBlock(centerX, centerY, x, y, z, height, color, cosAngle, sinAngle, stepSize, alignedFaces = {}, visibleFaces = {}) {
+            // 方块的半尺寸，使其与网格单元一致
+            const halfSize = stepSize * 0.5;
+            
+            // 立方体顶点 - x, y, z 为中心坐标
+            const vertices = [
+                // 底面顶点（Y轴正方向）
+                { x: x - halfSize, y: y + halfSize, z: z - halfSize },
+                { x: x + halfSize, y: y + halfSize, z: z - halfSize },
+                { x: x + halfSize, y: y + halfSize, z: z + halfSize },
+                { x: x - halfSize, y: y + halfSize, z: z + halfSize },
+                // 顶面顶点（Y轴负方向）
+                { x: x - halfSize, y: y - halfSize, z: z - halfSize },
+                { x: x + halfSize, y: y - halfSize, z: z - halfSize },
+                { x: x + halfSize, y: y - halfSize, z: z + halfSize },
+                { x: x - halfSize, y: y - halfSize, z: z + halfSize }
+            ];
+            
+            // 顶点投影 - 与参考文件完全一致
+            const projectedVertices = vertices.map(vertex => {
+                const rotatedX = vertex.x * cosAngle - vertex.z * sinAngle;
+                const rotatedZ = vertex.x * sinAngle + vertex.z * cosAngle;
+                return project3D(rotatedX, vertex.y, rotatedZ, centerX, centerY, distance);
+            });
+            
+            // 绘制立方体的面 - 根据对齐情况使用实体或透明颜色
+            // 如果visibleFaces为空，默认所有面都可见
+            const shouldDrawFace = (face) => visibleFaces[face] !== false;
+            const angle = rotation % 360;
+            
+            // 全透视效果：所有面都使用半透明颜色
+            const transparentColor = color + '30'; // 30为透明度（约19%）
+            
+            // 绘制所有6个面，不管是否可见，实现全透视效果
+            
+            // 绘制顶面 (Y轴负方向)
+            ctx.fillStyle = transparentColor;
+            ctx.beginPath();
+            ctx.moveTo(projectedVertices[4].x, projectedVertices[4].y);
+            ctx.lineTo(projectedVertices[5].x, projectedVertices[5].y);
+            ctx.lineTo(projectedVertices[6].x, projectedVertices[6].y);
+            ctx.lineTo(projectedVertices[7].x, projectedVertices[7].y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 绘制底面 (Y轴正方向)
+            ctx.fillStyle = transparentColor;
+            ctx.beginPath();
+            ctx.moveTo(projectedVertices[0].x, projectedVertices[0].y);
+            ctx.lineTo(projectedVertices[1].x, projectedVertices[1].y);
+            ctx.lineTo(projectedVertices[2].x, projectedVertices[2].y);
+            ctx.lineTo(projectedVertices[3].x, projectedVertices[3].y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 绘制左面 (X轴负方向)
+            ctx.fillStyle = transparentColor;
+            ctx.beginPath();
+            ctx.moveTo(projectedVertices[0].x, projectedVertices[0].y);
+            ctx.lineTo(projectedVertices[4].x, projectedVertices[4].y);
+            ctx.lineTo(projectedVertices[7].x, projectedVertices[7].y);
+            ctx.lineTo(projectedVertices[3].x, projectedVertices[3].y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 绘制右面 (X轴正方向)
+            ctx.fillStyle = transparentColor;
+            ctx.beginPath();
+            ctx.moveTo(projectedVertices[1].x, projectedVertices[1].y);
+            ctx.lineTo(projectedVertices[5].x, projectedVertices[5].y);
+            ctx.lineTo(projectedVertices[6].x, projectedVertices[6].y);
+            ctx.lineTo(projectedVertices[2].x, projectedVertices[2].y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 绘制前面 (Z轴负方向)
+            ctx.fillStyle = transparentColor;
+            ctx.beginPath();
+            ctx.moveTo(projectedVertices[0].x, projectedVertices[0].y);
+            ctx.lineTo(projectedVertices[1].x, projectedVertices[1].y);
+            ctx.lineTo(projectedVertices[5].x, projectedVertices[5].y);
+            ctx.lineTo(projectedVertices[4].x, projectedVertices[4].y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 绘制后面 (Z轴正方向)
+            ctx.fillStyle = transparentColor;
+            ctx.beginPath();
+            ctx.moveTo(projectedVertices[3].x, projectedVertices[3].y);
+            ctx.lineTo(projectedVertices[7].x, projectedVertices[7].y);
+            ctx.lineTo(projectedVertices[6].x, projectedVertices[6].y);
+            ctx.lineTo(projectedVertices[2].x, projectedVertices[2].y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 绘制立方体的外部边框 - 使用加深的颜色
+            ctx.strokeStyle = shadeColor(color, -40); // 加深40%
+            ctx.lineWidth = 1;
+            
+            const edges = [
+                // 底面
+                [0, 1], [1, 2], [2, 3], [3, 0],
+                // 顶面
+                [4, 5], [5, 6], [6, 7], [7, 4],
+                // 垂直边
+                [0, 4], [1, 5], [2, 6], [3, 7]
+            ];
+            
+            edges.forEach(edge => {
+                const start = projectedVertices[edge[0]];
+                const end = projectedVertices[edge[1]];
+                
+                ctx.beginPath();
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+                ctx.stroke();
+            });
+            
+            ctx.lineWidth = 1; // 恢复线宽
+        }
+        
+        // 动画循环
+        function animate() {
+            if (isAnimating) {
+                rotation = (rotation + 1) % 360;
+                document.getElementById('rotation').value = rotation;
+                document.getElementById('rotationValue').textContent = rotation + '°';
+                draw3DGrid();
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+        
+        // 游戏控制函数
+        function startGame() {
+            // 重置游戏状态
+            gameGrid = Array(gridHeight).fill().map(() => Array(gridSize).fill(0));
+            score = 0;
+            level = 1;
+            lines = 0;
+            dropInterval = 1000;
+            gameRunning = true;
+            gamePaused = false;
+            lastDropTime = 0;
+            backWallColors.clear(); // 清空后墙
+            hideStatusOverlay();
+            
+            // 生成初始方块
+            currentPiece = generatePiece();
+            nextPiece = generatePiece();
+            
+            updateDisplay();
+            drawNextPiece();
+            draw3DGrid(); // 立即绘制初始状态
+            requestAnimationFrame(gameLoop);
+        }
+        function restartGame() {
+            if (gameRunning) {
+                gameRunning = false;
+                gamePaused = false;
+            }
+            setTimeout(startGame, 100);
+        }
+        
+        // 暂停/继续游戏
+        function togglePause() {
+            if (!gameRunning) return;
+            
+            gamePaused = !gamePaused;
+            
+            if (gamePaused) {
+                // 暂停时不显示遮罩层，允许用户调整视角
+                // 在画布上绘制暂停提示文字
+                drawPauseOverlay();
+            } else {
+                lastDropTime = performance.now(); // 重置时间，避免暂停后立即下落
+                requestAnimationFrame(gameLoop);
+                draw3DGrid(); // 继续时重绘，清除暂停提示
+            }
+        }
+        
+        // 在画布上绘制暂停提示
+        function drawPauseOverlay() {
+            if (!ctx || !canvas) return;
+            
+            // 先绘制正常的游戏画面
+            draw3DGrid();
+            
+            // 在右上角绘制暂停提示框
+            const boxWidth = 280;
+            const boxHeight = 120;
+            const padding = 20;
+            const boxX = canvas.width - boxWidth - padding;
+            const boxY = padding;
+            
+            // 绘制半透明背景框
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+            ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+            
+            // 绘制边框
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+            
+            // 绘制暂停文字
+            ctx.fillStyle = '#FFD700'; // 金色
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText('⏸ 游戏已暂停', boxX + boxWidth / 2, boxY + 15);
+            
+            ctx.fillStyle = 'white';
+            ctx.font = '16px Arial';
+            ctx.fillText('空格键/P键 继续', boxX + boxWidth / 2, boxY + 60);
+            
+            ctx.font = '14px Arial';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillText('可调整视角', boxX + boxWidth / 2, boxY + 90);
+        }
+        
+        // 事件监听器
+        // 视角旋转按钮 - 暂停时也可以使用
+        document.getElementById('rotateLeftBtn').addEventListener('click', () => {
+            rotation = (rotation - 15 + 360) % 360;
+            if (gamePaused) {
+                drawPauseOverlay(); // 暂停时重绘暂停提示
+            } else {
+                draw3DGrid();
+            }
+        });
+        
+        document.getElementById('rotateRightBtn').addEventListener('click', () => {
+            rotation = (rotation + 15) % 360;
+            if (gamePaused) {
+                drawPauseOverlay(); // 暂停时重绘暂停提示
+            } else {
+                draw3DGrid();
+            }
+        });
+        
+        document.getElementById('resetRotationBtn').addEventListener('click', () => {
+            rotation = 0;
+            if (gamePaused) {
+                drawPauseOverlay(); // 暂停时重绘暂停提示
+            } else {
+                draw3DGrid();
+            }
+        });
+        
+        // 检查必需的 DOM 元素
+        const requiredElements = [
+            'startGame', 'regenerateBtn', 'pieceTypeSelect',
+            'targetPositionsInput', 'targetZInput', 'debugData'
+        ];
+        
+        requiredElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (!element) {
+                const errorMsg = `缺失元素: ${id}`;
+                console.error(errorMsg);
+                errorLogs.push(errorMsg);
+            }
+        });
+        
+        document.getElementById('startGame').addEventListener('click', startGame);
+        document.getElementById('pauseGame').addEventListener('click', togglePause);
+        statusOverlayButton.addEventListener('click', restartGame);
+        
+        // 全选复制按钮
+        document.getElementById('copyDebugBtn').addEventListener('click', () => {
+            const debugTextarea = document.getElementById('debugData');
+            debugTextarea.select();
+            debugTextarea.setSelectionRange(0, 99999); // 兼容移动设备
+            try {
+                document.execCommand('copy');
+                alert('调试数据已复制到剪贴板！');
+            } catch (err) {
+                alert('复制失败，请手动选择文本复制');
+            }
+        });
+        
+        // 重新生成方块按钮
+        document.getElementById('regenerateBtn').addEventListener('click', () => {
+            const selectedType = document.getElementById('pieceTypeSelect').value;
+            const positionsInput = document.getElementById('targetPositionsInput').value.trim();
+            const targetZ = parseInt(document.getElementById('targetZInput').value, 10);
+            targetInitialZ = Math.min(5, Math.max(-5, isNaN(targetZ) ? targetInitialZ : targetZ));
+            
+            // 辅助函数：同时输出到控制台和调试文本框
+            const logDebug = (msg) => {
+                console.log(msg);
+                debugLog(msg);
+            };
+            
+            if (!gameRunning) {
+                // 如果游戏未开始，先开始游戏
+                startGame();
+            }
+            
+            // 在startGame之后输出调试信息，避免被draw3DGrid覆盖
+            logDebug('=== 生成指定方块 ===');
+            logDebug('选择类型: ' + selectedType);
+            logDebug('初始Z: ' + targetInitialZ);
+            
+            // 尝试解析坐标列表
+            // 如果坐标输入框不为空，就创建自定义方块
+            let customPiece = null;
+            const hasPositions = positionsInput && positionsInput.trim();
+            logDebug('坐标输入: "' + positionsInput + '"');
+            logDebug('是否有坐标: ' + hasPositions);
+            
+            if (hasPositions) {
+                try {
+                    // 解析坐标列表，格式: [x,y] [x,y] ...
+                    // 支持整数和小数，包括负数
+                    const matches = positionsInput.match(/\[\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*\]/g);
+                    logDebug('匹配结果: ' + (matches ? matches.length + ' 个坐标' : '无'));
+                    
+                    if (matches && matches.length > 0) {
+                        const positions = matches.map(m => {
+                            // 移除方括号和空格
+                            const coords = m.slice(1, -1).split(',').map(s => parseFloat(s.trim()));
+                            return { x: Math.round(coords[0]), y: Math.round(coords[1]) };
+                        });
+                        
+                        logDebug('解析的坐标: ' + JSON.stringify(positions));
+                        
+                        // 验证坐标范围 (0-9)
+                        const validPositions = positions.filter(pos => 
+                            pos.x >= 0 && pos.x <= 9 && pos.y >= 0 && pos.y <= 9
+                        );
+                        
+                        if (validPositions.length === 0) {
+                            const errorMsg = '所有坐标都超出范围 (0-9)，请检查输入';
+                            logDebug('ERROR: ' + errorMsg);
+                            errorLogs.push(errorMsg);
+                            alert(errorMsg);
+                        } else {
+                            if (validPositions.length < positions.length) {
+                                logDebug('WARNING: ' + (positions.length - validPositions.length) + ' 个坐标超出范围被忽略');
+                            }
+                            
+                            // 创建自定义方块，传入选择的方块类型
+                            const typeToUse = selectedType === 'random' ? 'CUSTOM' : selectedType;
+                            customPiece = createCustomPiece(validPositions, targetInitialZ, typeToUse);
+                            logDebug('创建自定义方块: ' + typeToUse);
+                            logDebug('有效坐标: ' + JSON.stringify(validPositions));
+                        }
+                    } else {
+                        const errorMsg = '无法解析坐标，请使用格式: [x,y] [x,y] ...';
+                        logDebug('ERROR: ' + errorMsg);
+                        errorLogs.push(errorMsg);
+                        alert(errorMsg);
+                    }
+                } catch (e) {
+                    const errorMsg = '坐标解析错误: ' + (e.message || e);
+                    logDebug('ERROR: ' + errorMsg);
+                    errorLogs.push(errorMsg);
+                    alert(errorMsg);
+                }
+            }
+            
+            // 如果有自定义方块，使用它；否则生成选定类型的方块
+            if (customPiece) {
+                logDebug('使用自定义方块');
+                currentPiece = customPiece;
+            } else {
+                logDebug('生成标准方块');
+                const typeToGenerate = selectedType === 'random' ? null : selectedType;
+                logDebug('选择的类型: ' + selectedType);
+                logDebug('传递给generatePiece: ' + typeToGenerate);
+                currentPiece = generatePiece(typeToGenerate);
+                logDebug('生成的方块: ' + currentPiece.type);
+            }
+            
+            logDebug('=== 生成完成 ===');
+            
+            nextPiece = generatePiece(selectedType === 'random' ? null : selectedType);
+            drawNextPiece();
+            
+            // 如果游戏是暂停状态，自动恢复
+            if (gamePaused) {
+                gamePaused = false;
+                lastDropTime = 0; // 重置下落时间
+                requestAnimationFrame(gameLoop);
+            }
+            
+            draw3DGrid();
+        });
+        
+        // 键盘控制 - 适配向后墙移动
+        document.addEventListener('keydown', (e) => {
+            // 空格键处理：开始游戏或暂停/继续
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (!gameRunning) {
+                    startGame();
+                } else {
+                    togglePause();
+                }
+                return;
+            }
+            
+            // 游戏未运行或已暂停时，不处理其他按键
+            if (!gameRunning || gamePaused) {
+                return;
+            }
+            
+            switch(e.code) {
+                // ← 键 → 左移方块
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    movePiece(-1, 0);
+                    break;
+                // → 键 → 右移方块
+                case 'ArrowRight':
+                    e.preventDefault();
+                    movePiece(1, 0);
+                    break;
+                // ↑ 键 → 上移方块
+                case 'ArrowUp':
+                    e.preventDefault();
+                    movePieceY(1);
+                    break;
+                // ↓ 键 → 下移方块
+                case 'ArrowDown':
+                    e.preventDefault();
+                    movePieceY(-1);
+                    break;
+                // w键 → 向上旋转
+                case 'KeyW':
+                    e.preventDefault();
+                    rotateCurrentPiece();
+                    break;
+                // s键 → 向下旋转
+                case 'KeyS':
+                    e.preventDefault();
+                    rotateCurrentPieceInverse();
+                    break;
+                // a键 → 向左旋转
+                case 'KeyA':
+                    e.preventDefault();
+                    rotateCurrentPieceYInverse();
+                    break;
+                // d键 → 向右旋转
+                case 'KeyD':
+                    e.preventDefault();
+                    rotateCurrentPieceY();
+                    break;
+                // P键 → 暂停/继续
+                case 'KeyP':
+                    e.preventDefault();
+                    togglePause();
+                    break;
+            }
+            
+            draw3DGrid();
+        });
+        
+        // 视角距离已锁定，移除鼠标滚轮缩放功能
+        
+        // 初始化游戏网格
+        gameGrid = Array(GRID_HEIGHT).fill().map(() => Array(GRID_WIDTH).fill(0));
+        
+        // 页面加载完成后初始绘制
+        window.addEventListener('load', () => {
+            draw3DGrid();
+        });
+        
+        // 不自动启动游戏，等待用户点击开始
+    </script>
+</body>
+</html>
