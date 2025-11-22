@@ -73,6 +73,7 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             margin: 20px 0;
             cursor: grab;
+            touch-action: none;
         }
 
         canvas:active {
@@ -720,6 +721,12 @@
         // 控制变量
         let rotation = 0;    // 视角旋转默认值为0
         let distance = 310;  // 视角距离默认值为310
+        const MIN_DISTANCE = 240;
+        const MAX_DISTANCE = 440;
+        let isDraggingView = false;
+        let lastDragX = 0;
+        let lastDragY = 0;
+        let activePointerId = null;
         let targetBackWallX = 4; // 初始前墙目标坐标（方块生成位置）
         let targetBackWallY = 4;
         let targetInitialZ = -5; // 初始Z坐标（-5前墙至5后墙）
@@ -2106,16 +2113,18 @@
                 ctx.stroke();
             }
             
-            // 绘制后墙网格 (z = +cubeSize，10×10网格)
-            ctx.strokeStyle = '#bbb'; // 浅灰色
+            // 绘制后墙网格 (z = +cubeSize，10×10网格) - 使用浅红色虚线
+            ctx.strokeStyle = '#ffaaaa'; // 浅红色
             ctx.lineWidth = 0.5; // 更细的线条
+            ctx.setLineDash([3, 3]); // 设置虚线样式：3px实线，3px间隔
+            
             // 水平线 (x方向，10格宽)
             for (let i = 0; i <= gridSize; i++) {
                 ctx.beginPath();
                 for (let j = 0; j <= gridSize; j++) {
                     const x = (i - gridSize / 2) * step;
                     const y = (j - gridSize / 2) * step;
-                    const z = cubeSize;
+                    const z = cubeSize; // 后墙位置
                     
                     // 应用旋转
                     const rotatedX = x * cosAngle - z * sinAngle;
@@ -2138,7 +2147,7 @@
                 for (let j = 0; j <= gridSize; j++) {
                     const x = (j - gridSize / 2) * step;
                     const y = (i - gridSize / 2) * step;
-                    const z = cubeSize;
+                    const z = cubeSize; // 后墙位置
                     
                     // 应用旋转
                     const rotatedX = x * cosAngle - z * sinAngle;
@@ -2752,104 +2761,57 @@
             }
         }
         
-        function updateMobilePauseState() {
-            const mobilePause = document.getElementById('mobilePause');
-            if (!mobilePause) return;
-            mobilePause.textContent = !gameRunning || gamePaused ? '▶' : '⏸';
-        }
-
-        // 游戏控制函数
-        function startGame() {
-            // 重置游戏状态
-            gameGrid = Array(gridHeight).fill().map(() => Array(gridSize).fill(0));
-            score = 0;
-            level = 1;
-            lines = 0;
-            dropInterval = 1000;
-            gameRunning = true;
-            gamePaused = false;
-            lastDropTime = 0;
-            backWallColors.clear(); // 清空后墙
-            hideStatusOverlay();
-            
-            // 生成初始方块
-            currentPiece = generatePiece();
-            nextPiece = generatePiece();
-            
-            updateDisplay();
-            drawNextPiece();
-            draw3DGrid(); // 立即绘制初始状态
-            requestAnimationFrame(gameLoop);
-
-            updateMobilePauseState();
-        }
-        function restartGame() {
-            if (gameRunning) {
-                gameRunning = false;
-                gamePaused = false;
-            }
-            setTimeout(startGame, 100);
-            updateMobilePauseState();
-        }
-        
-        // 暂停/继续游戏
-        function togglePause() {
-            if (!gameRunning) return;
-            
-            gamePaused = !gamePaused;
-            
+        function refreshViewAfterDrag() {
             if (gamePaused) {
-                // 暂停时不显示遮罩层，允许用户调整视角
-                // 在画布上绘制暂停提示文字
                 drawPauseOverlay();
             } else {
-                lastDropTime = performance.now(); // 重置时间，避免暂停后立即下落
-                requestAnimationFrame(gameLoop);
-                draw3DGrid(); // 继续时重绘，清除暂停提示
+                draw3DGrid();
             }
-            updateMobilePauseState();
         }
-        
-        // 在画布上绘制暂停提示
-        function drawPauseOverlay() {
-            if (!ctx || !canvas) return;
-            
-            // 先绘制正常的游戏画面
-            draw3DGrid();
-            
-            // 在右上角绘制暂停提示框
-            const boxWidth = 280;
-            const boxHeight = 120;
-            const padding = 20;
-            const boxX = canvas.width - boxWidth - padding;
-            const boxY = padding;
-            
-            // 绘制半透明背景框
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-            ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-            
-            // 绘制边框
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-            
-            // 绘制暂停文字
-            ctx.fillStyle = '#FFD700'; // 金色
-            ctx.font = 'bold 32px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            ctx.fillText('⏸ 游戏已暂停', boxX + boxWidth / 2, boxY + 15);
-            
-            ctx.fillStyle = 'white';
-            ctx.font = '16px Arial';
-            ctx.fillText('空格键/P键 继续', boxX + boxWidth / 2, boxY + 60);
-            
-            ctx.font = '14px Arial';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.fillText('可调整视角', boxX + boxWidth / 2, boxY + 90);
+
+        if (canvas) {
+            canvas.addEventListener('pointerdown', (e) => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                isDraggingView = true;
+                activePointerId = e.pointerId;
+                lastDragX = e.clientX;
+                lastDragY = e.clientY;
+                try {
+                    canvas.setPointerCapture(activePointerId);
+                } catch (err) {
+                    // 某些浏览器在 pointer capture 被禁用时会抛错，忽略即可
+                }
+                canvas.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+
+            canvas.addEventListener('pointermove', (e) => {
+                if (!isDraggingView || e.pointerId !== activePointerId) return;
+                const dx = e.clientX - lastDragX;
+                const dy = e.clientY - lastDragY;
+                rotation = (rotation + dx * 0.3 + 360) % 360;
+                distance = Math.min(MAX_DISTANCE, Math.max(MIN_DISTANCE, distance - dy * 0.3));
+                lastDragX = e.clientX;
+                lastDragY = e.clientY;
+                refreshViewAfterDrag();
+            });
+
+            const endDrag = (e) => {
+                if (!isDraggingView || e.pointerId !== activePointerId) return;
+                isDraggingView = false;
+                activePointerId = null;
+                canvas.style.cursor = 'grab';
+                try {
+                    canvas.releasePointerCapture(e.pointerId);
+                } catch (err) {
+                    // 兼容性：releasePointerCapture 可能在某些环境不可用
+                }
+            };
+
+            canvas.addEventListener('pointerup', endDrag);
+            canvas.addEventListener('pointercancel', endDrag);
         }
-        
-        // 事件监听器
+
         // 视角旋转按钮 - 暂停时也可以使用
         document.getElementById('rotateLeftBtn').addEventListener('click', () => {
             rotation = (rotation - 15 + 360) % 360;
