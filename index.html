@@ -2286,6 +2286,27 @@
             
             // 恢复实线样式
             ctx.setLineDash([]);
+
+            // 盒子外的地面与顶面扩展
+            const shellOffset = step * 2;
+            const floorCoords = [
+                { x: -cubeSize - shellOffset, z: -cubeSize - shellOffset },
+                { x: cubeSize + shellOffset, z: -cubeSize - shellOffset },
+                { x: cubeSize + shellOffset, z: cubeSize + shellOffset },
+                { x: -cubeSize - shellOffset, z: cubeSize + shellOffset }
+            ];
+            const drawSurface = (coords, y, color) => {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                coords.forEach(({ x, z }, idx) => {
+                    const point = project3D(x, y, z, centerX, centerY, distance);
+                    idx === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y);
+                });
+                ctx.closePath();
+                ctx.fill();
+            };
+            drawSurface(floorCoords, cubeSize + shellOffset / 2, 'rgba(200, 200, 200, 0.08)');
+            drawSurface(floorCoords, -cubeSize - shellOffset / 2, 'rgba(200, 200, 200, 0.04)');
             
             // 绘制前墙网格坐标标签 - 使用红色字体（10×10网格）
             ctx.fillStyle = '#ff0000';
@@ -2296,120 +2317,37 @@
                 for (let xIndex = 0; xIndex < gridSize; xIndex++) {
                     const worldX = (xIndex - Math.floor(gridSize / 2) + 0.5) * step;
                     const worldY = (yIndex - Math.floor(gridSize / 2) + 0.5) * step;
-                    const worldZ = -cubeSize; // 前墙位置
-                    
-                    // 应用旋转
-                    const rotatedX = worldX * cosAngle - worldZ * sinAngle;
-                    const rotatedZ = worldX * sinAngle + worldZ * cosAngle;
-                    
-                    const point = project3D(rotatedX, worldY, rotatedZ, centerX, centerY, distance);
-                    
-                    // 绘制坐标标签（反转 Y 轴，使 0 在上，9 在下）
+                    const point = project3D(worldX * cosAngle - (-cubeSize) * sinAngle, worldY, worldX * sinAngle + (-cubeSize) * cosAngle, centerX, centerY, distance);
                     const displayYIndex = gridSize - 1 - yIndex;
                     ctx.fillText(`${xIndex},${displayYIndex}`, point.x, point.y);
                 }
             }
-            
-            // 绘制左墙网格 (x = -cubeSize) - 仅绘制从前墙到后墙的连接线
-            ctx.strokeStyle = '#ccc'; // 浅灰色
-            ctx.lineWidth = 0.5; // 更细的线条
-            // 只绘制前墙和后墙边缘的水平线 (z方向)
+
+            // 绘制左右墙网格与纵线
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 0.5;
             for (let i = 0; i <= gridSize; i++) {
-                const x = -cubeSize;
                 const y = (i - gridSize / 2) * step;
-                
-                // 前墙到后墙的线
-                ctx.beginPath();
-                const zFront = -gridDepth / 2 * step;
-                const zBack = gridDepth / 2 * step;
-                
-                // 前墙点
-                const rotatedXFront = x * cosAngle - zFront * sinAngle;
-                const rotatedZFront = x * sinAngle + zFront * cosAngle;
-                const pointFront = project3D(rotatedXFront, y, rotatedZFront, centerX, centerY, distance);
-                
-                // 后墙点
-                const rotatedXBack = x * cosAngle - zBack * sinAngle;
-                const rotatedZBack = x * sinAngle + zBack * cosAngle;
-                const pointBack = project3D(rotatedXBack, y, rotatedZBack, centerX, centerY, distance);
-                
-                ctx.moveTo(pointFront.x, pointFront.y);
-                ctx.lineTo(pointBack.x, pointBack.y);
-                ctx.stroke();
-            }
-            
-            // 添加左墙的纵线 (从地面到顶面)
-            ctx.strokeStyle = '#ccc'; // 浅灰色
-            ctx.lineWidth = 0.5; // 更细的线条
-            for (let i = 0; i <= gridSize; i++) {
+                [-cubeSize, cubeSize].forEach(x => {
+                    ctx.beginPath();
+                    const front = project3D(x, y, -cubeSize, centerX, centerY, distance);
+                    const back = project3D(x, y, cubeSize, centerX, centerY, distance);
+                    ctx.moveTo(front.x, front.y);
+                    ctx.lineTo(back.x, back.y);
+                    ctx.stroke();
+                });
                 const z = (i - gridSize / 2) * step;
-                const x = -cubeSize;
-                
-                // 地面点
-                const groundRotatedX = x * cosAngle - z * sinAngle;
-                const groundRotatedZ = x * sinAngle + z * cosAngle;
-                const groundPoint = project3D(groundRotatedX, cubeSize, groundRotatedZ, centerX, centerY, distance);
-                
-                // 顶面点
-                const topRotatedX = x * cosAngle - z * sinAngle;
-                const topRotatedZ = x * sinAngle + z * cosAngle;
-                const topPoint = project3D(topRotatedX, -cubeSize, topRotatedZ, centerX, centerY, distance);
-                
+                const leftGround = project3D(-cubeSize * cosAngle - z * sinAngle, cubeSize, -cubeSize * sinAngle + z * cosAngle, centerX, centerY, distance);
+                const leftTop = project3D(-cubeSize * cosAngle - z * sinAngle, -cubeSize, -cubeSize * sinAngle + z * cosAngle, centerX, centerY, distance);
                 ctx.beginPath();
-                ctx.moveTo(groundPoint.x, groundPoint.y);
-                ctx.lineTo(topPoint.x, topPoint.y);
+                ctx.moveTo(leftGround.x, leftGround.y);
+                ctx.lineTo(leftTop.x, leftTop.y);
                 ctx.stroke();
-            }
-            ctx.lineWidth = 1;
-            
-            // 绘制右墙网格 (x = +cubeSize) - 仅绘制从前墙到后墙的连接线
-            ctx.strokeStyle = '#ccc'; // 浅灰色
-            ctx.lineWidth = 0.5; // 更细的线条
-            // 只绘制前墙和后墙边缘的水平线 (z方向)
-            for (let i = 0; i <= gridSize; i++) {
-                const x = cubeSize;
-                const y = (i - gridSize / 2) * step;
-                
-                // 前墙到后墙的线
+                const rightGround = project3D(cubeSize * cosAngle - z * sinAngle, cubeSize, cubeSize * sinAngle + z * cosAngle, centerX, centerY, distance);
+                const rightTop = project3D(cubeSize * cosAngle - z * sinAngle, -cubeSize, cubeSize * sinAngle + z * cosAngle, centerX, centerY, distance);
                 ctx.beginPath();
-                const zFront = -gridDepth / 2 * step;
-                const zBack = gridDepth / 2 * step;
-                
-                // 前墙点
-                const rotatedXFront = x * cosAngle - zFront * sinAngle;
-                const rotatedZFront = x * sinAngle + zFront * cosAngle;
-                const pointFront = project3D(rotatedXFront, y, rotatedZFront, centerX, centerY, distance);
-                
-                // 后墙点
-                const rotatedXBack = x * cosAngle - zBack * sinAngle;
-                const rotatedZBack = x * sinAngle + zBack * cosAngle;
-                const pointBack = project3D(rotatedXBack, y, rotatedZBack, centerX, centerY, distance);
-                
-                ctx.moveTo(pointFront.x, pointFront.y);
-                ctx.lineTo(pointBack.x, pointBack.y);
-                ctx.stroke();
-            }
-            
-            // 添加右墙的纵线 (从地面到顶面)
-            ctx.strokeStyle = '#ccc'; // 浅灰色
-            ctx.lineWidth = 0.5; // 更细的线条
-            for (let i = 0; i <= gridSize; i++) {
-                const z = (i - gridSize / 2) * step;
-                const x = cubeSize;
-                
-                // 地面点
-                const groundRotatedX = x * cosAngle - z * sinAngle;
-                const groundRotatedZ = x * sinAngle + z * cosAngle;
-                const groundPoint = project3D(groundRotatedX, cubeSize, groundRotatedZ, centerX, centerY, distance);
-                
-                // 顶面点
-                const topRotatedX = x * cosAngle - z * sinAngle;
-                const topRotatedZ = x * sinAngle + z * cosAngle;
-                const topPoint = project3D(topRotatedX, -cubeSize, topRotatedZ, centerX, centerY, distance);
-                
-                ctx.beginPath();
-                ctx.moveTo(groundPoint.x, groundPoint.y);
-                ctx.lineTo(topPoint.x, topPoint.y);
+                ctx.moveTo(rightGround.x, rightGround.y);
+                ctx.lineTo(rightTop.x, rightTop.y);
                 ctx.stroke();
             }
             ctx.lineWidth = 1;
