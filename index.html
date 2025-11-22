@@ -312,6 +312,11 @@
             .controls {
                 display: none !important;
             }
+            
+            /* 移动端隐藏键盘操作说明 */
+            .keyboard-instructions {
+                display: none !important;
+            }
         }
         
         @media (max-width: 768px) {
@@ -427,7 +432,7 @@
                 </div>
                 
                 <!-- 操作说明 -->
-                <div style="font-size: 0.85rem; line-height: 1.8; text-align: left; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px;">
+                <div class="keyboard-instructions" style="font-size: 0.85rem; line-height: 1.8; text-align: left; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px;">
                     ← 键 → 左移方块<br>
                     → 键 → 右移方块<br>
                     ↑ 键 → 上移方块<br>
