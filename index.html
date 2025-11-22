@@ -2470,61 +2470,58 @@
                 ctx.fillText(`${xIndex},${yIndex}`, centerX_proj - 10, centerY_proj + 3);
             }
             
-            // 绘制前墙网格 (z = -cubeSize，10×10网格) - 使用浅红色虚线
-            ctx.strokeStyle = '#ffaaaa'; // 浅红色
-            ctx.lineWidth = 0.5; // 更细的线条
-            ctx.setLineDash([3, 3]); // 设置虚线样式：3px实线，3px间隔
-            
-            // 水平线 (x方向，10格宽)
-            for (let i = 0; i <= gridSize; i++) {
-                ctx.beginPath();
-                for (let j = 0; j <= gridSize; j++) {
-                    const x = (i - gridSize / 2) * step;
-                    const y = (j - gridSize / 2) * step;
-                    const z = -cubeSize; // 前墙位置
-                    
-                    // 应用旋转
-                    const rotatedX = x * cosAngle - z * sinAngle;
-                    const rotatedZ = x * sinAngle + z * cosAngle;
-                    
-                    const point = project3D(rotatedX, y, rotatedZ, centerX, centerY, distance);
-                    
-                    if (j === 0) {
-                        ctx.moveTo(point.x, point.y);
-                    } else {
-                        ctx.lineTo(point.x, point.y);
-                    }
-                }
-                ctx.stroke();
-            }
-            
-            // 垂直线 (y方向，10格高)
-            for (let i = 0; i <= gridSize; i++) {
-                ctx.beginPath();
-                for (let j = 0; j <= gridSize; j++) {
-                    const x = (j - gridSize / 2) * step;
-                    const y = (i - gridSize / 2) * step;
-                    const z = -cubeSize; // 前墙位置
-                    
-                    // 应用旋转
-                    const rotatedX = x * cosAngle - z * sinAngle;
-                    const rotatedZ = x * sinAngle + z * cosAngle;
-                    
-                    const point = project3D(rotatedX, y, rotatedZ, centerX, centerY, distance);
-                    
-                    if (j === 0) {
-                        ctx.moveTo(point.x, point.y);
-                    } else {
-                        ctx.lineTo(point.x, point.y);
-                    }
-                }
-                ctx.stroke();
-            }
-            
-            // 恢复实线样式
-            ctx.setLineDash([]);
+            if (SHOW_FRONT_WALL) {
+                ctx.strokeStyle = '#ffaaaa';
+                ctx.lineWidth = 0.5;
+                ctx.setLineDash([3, 3]);
 
-            // 盒子外的地面与顶面扩展
+                for (let i = 0; i <= gridSize; i++) {
+                    ctx.beginPath();
+                    for (let j = 0; j <= gridSize; j++) {
+                        const x = (i - gridSize / 2) * step;
+                        const y = (j - gridSize / 2) * step;
+                        const z = -cubeSize;
+                        const rotatedX = x * cosAngle - z * sinAngle;
+                        const rotatedZ = x * sinAngle + z * cosAngle;
+                        const point = project3D(rotatedX, y, rotatedZ, centerX, centerY, distance);
+                        if (j === 0) ctx.moveTo(point.x, point.y);
+                        else ctx.lineTo(point.x, point.y);
+                    }
+                    ctx.stroke();
+                }
+
+                for (let i = 0; i <= gridSize; i++) {
+                    ctx.beginPath();
+                    for (let j = 0; j <= gridSize; j++) {
+                        const x = (j - gridSize / 2) * step;
+                        const y = (i - gridSize / 2) * step;
+                        const z = -cubeSize;
+                        const rotatedX = x * cosAngle - z * sinAngle;
+                        const rotatedZ = x * sinAngle + z * cosAngle;
+                        const point = project3D(rotatedX, y, rotatedZ, centerX, centerY, distance);
+                        if (j === 0) ctx.moveTo(point.x, point.y);
+                        else ctx.lineTo(point.x, point.y);
+                    }
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = '#ff0000';
+                ctx.font = 'bold 10px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                for (let yIndex = 0; yIndex < gridSize; yIndex++) {
+                    for (let xIndex = 0; xIndex < gridSize; xIndex++) {
+                        const worldX = (xIndex - Math.floor(gridSize / 2) + 0.5) * step;
+                        const worldY = (yIndex - Math.floor(gridSize / 2) + 0.5) * step;
+                        const point = project3D(worldX * cosAngle - (-cubeSize) * sinAngle, worldY, worldX * sinAngle + (-cubeSize) * cosAngle, centerX, centerY, distance);
+                        const displayYIndex = gridSize - 1 - yIndex;
+                        ctx.fillText(`${xIndex},${displayYIndex}`, point.x, point.y);
+                    }
+                }
+
+                ctx.setLineDash([]);
+            }
+
             const shellOffset = step * 2;
             const floorCoords = [
                 { x: -cubeSize - shellOffset, z: -cubeSize - shellOffset },
@@ -2545,21 +2542,6 @@
             drawSurface(floorCoords, cubeSize + shellOffset / 2, 'rgba(200, 200, 200, 0.08)');
             drawSurface(floorCoords, -cubeSize - shellOffset / 2, 'rgba(200, 200, 200, 0.04)');
             
-            // 绘制前墙网格坐标标签 - 使用红色字体（10×10网格）
-            ctx.fillStyle = '#ff0000';
-            ctx.font = 'bold 10px monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            for (let yIndex = 0; yIndex < gridSize; yIndex++) {
-                for (let xIndex = 0; xIndex < gridSize; xIndex++) {
-                    const worldX = (xIndex - Math.floor(gridSize / 2) + 0.5) * step;
-                    const worldY = (yIndex - Math.floor(gridSize / 2) + 0.5) * step;
-                    const point = project3D(worldX * cosAngle - (-cubeSize) * sinAngle, worldY, worldX * sinAngle + (-cubeSize) * cosAngle, centerX, centerY, distance);
-                    const displayYIndex = gridSize - 1 - yIndex;
-                    ctx.fillText(`${xIndex},${displayYIndex}`, point.x, point.y);
-                }
-            }
-
             // 绘制左右墙网格与纵线
             ctx.strokeStyle = '#ccc';
             ctx.lineWidth = 0.5;
