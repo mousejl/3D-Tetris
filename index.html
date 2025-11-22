@@ -302,6 +302,11 @@
             .mobile-controls {
                 display: flex;
             }
+            
+            /* 移动端隐藏调试数据区域 */
+            .control-group:has(#debugData) {
+                display: none !important;
+            }
         }
         
         @media (max-width: 768px) {
